@@ -25,6 +25,7 @@ runway-v2-tutorial/
 | 이름 | 주제 | 주요 기술 |
 |------|------|----------|
 | [wind-power-prediction-with-xgboost](tutorials/wind-power-prediction-with-xgboost/) | 풍력 발전량 예측 모델 학습/평가/배포 | XGBoost, Airflow, MLflow |
+| [runway-llm-tutorial](tutorials/runway-llm-tutorial/) | 내 문서를 읽고 답하는 LLM 챗봇 배포 | FastAPI, MCP, Qdrant, LiteLLM, OpenBao, Helm |
 
 ## 새 튜토리얼 추가하기
 
