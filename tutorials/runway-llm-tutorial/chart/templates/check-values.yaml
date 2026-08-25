@@ -1,0 +1,118 @@
+{{/*
+설정 오류를 **렌더 단계에서** 잡습니다.
+
+같은 오류를 런타임까지 끌고 가면 Pod은 정상적으로 뜨고 사용자의 첫 클릭에서 죽습니다.
+그때는 클러스터 안에 객체가 이미 만들어져 있고, Argo CD는 Healthy로 보이고, 로그를
+파고 들어가야 원인이 나옵니다. 렌더에서 막으면 배포 자체가 거부되고 메시지 한 줄로
+끝납니다 — 진단 비용이 완전히 다릅니다.
+
+값들의 **조합**도 봅니다. 하나씩은 멀쩡한데 같이 쓰면 말이 안 되는 경우가 실제로
+문제를 일으킵니다.
+*/}}
+
+{{- if not .Values.image.repository }}
+  {{- fail "image.repository가 비어 있습니다. 예) gitea.<도메인>/<프로젝트조직>/llm-tutorial\n  개인 계정이 아니라 프로젝트 조직 네임스페이스여야 합니다 — 프로젝트의 pull secret은 조직 봇 자격증명입니다." }}
+{{- end }}
+
+{{- if not .Values.image.tag }}
+  {{- fail "image.tag가 비어 있습니다. 코드를 고칠 때마다 태그를 올리세요 — 같은 태그를 재사용하면 노드가 옛 이미지를 계속 씁니다." }}
+{{- end }}
+
+{{- if not .Values.runway.llm.baseUrl }}
+  {{- fail "runway.llm.baseUrl이 비어 있습니다. 예) http://litellm.runway-applications.svc.cluster.local:4000/v1" }}
+{{- end }}
+
+{{- if not (hasSuffix "/v1" .Values.runway.llm.baseUrl) }}
+  {{- fail (printf "runway.llm.baseUrl은 '/v1'로 끝나야 합니다: %q\n  OpenAI 호환 경로가 <base>/chat/completions 이기 때문입니다." .Values.runway.llm.baseUrl) }}
+{{- end }}
+
+{{/*
+  runway.llm.model 은 **필수가 아닙니다.**
+
+  비워 두면 앱이 기동할 때 게이트웨이에 물어보고 채팅 모델을 하나 고르고, 무엇을
+  골랐는지 로그와 상태 화면에 밝힙니다. 모델 이름은 관리자가 게이트웨이 설정에
+  손으로 적어 넣은 문자열이라 규칙이 없고 추측할 수 없어서, 그걸 알아내라고 요구하는
+  것이 첫 실패의 가장 흔한 원인이었습니다.
+
+  특정 모델을 고정하고 싶을 때만 적습니다.
+*/}}
+
+{{/* 자격증명 — 세 경로 중 하나는 있어야 합니다. */}}
+{{- $openbao := include "llm-tutorial.openbaoEnabled" . }}
+{{- $secret := include "llm-tutorial.secretName" . }}
+{{- if and (not $openbao) (not $secret) }}
+  {{- fail "LLM 키를 줄 방법이 없습니다. 셋 중 하나를 설정하세요:\n  runway.openbao.secretEngine + secretName   (권장)\n  runway.credentials.existingSecret\n  runway.credentials.create: true + credentials.data.LLM_API_KEY" }}
+{{- end }}
+
+{{- if and .Values.runway.openbao.secretEngine (not .Values.runway.openbao.secretName) }}
+  {{- fail "runway.openbao.secretEngine만 있고 secretName이 없습니다. 둘 다 있어야 주입이 켜집니다." }}
+{{- end }}
+{{- if and .Values.runway.openbao.secretName (not .Values.runway.openbao.secretEngine) }}
+  {{- fail "runway.openbao.secretName만 있고 secretEngine이 없습니다. 둘 다 있어야 주입이 켜집니다." }}
+{{- end }}
+
+{{- if and .Values.runway.credentials.create (not .Values.runway.credentials.data.LLM_API_KEY) }}
+  {{- fail "runway.credentials.create: true 인데 credentials.data.LLM_API_KEY가 비어 있습니다." }}
+{{- end }}
+
+{{- if .Values.runway.credentials.data.LLM_API_KEY }}
+  {{- if not (hasPrefix "sk-" .Values.runway.credentials.data.LLM_API_KEY) }}
+    {{- fail "credentials.data.LLM_API_KEY가 'sk-'로 시작하지 않습니다.\n  LiteLLM 가상 키(콘솔 → 액세스 키 → LLM API 키)여야 합니다. Runway API 키('eyJ...')는 다른 자격증명이며 게이트웨이가 거부합니다." }}
+  {{- end }}
+{{- end }}
+
+{{/* 접근 제어 — "비밀번호를 요구한다"고 해 놓고 비밀번호를 안 주는 조합. */}}
+{{- if .Values.runway.access.passwordRequired }}
+  {{- if and (not $openbao) (not .Values.runway.credentials.data.ACCESS_PASSWORD) (not .Values.runway.credentials.existingSecret) }}
+    {{- fail "runway.access.passwordRequired: true 인데 ACCESS_PASSWORD를 줄 곳이 없습니다.\n  OpenBao 시크릿이나 Secret에 ACCESS_PASSWORD 키를 넣으세요." }}
+  {{- end }}
+{{- end }}
+
+{{/* 벡터 DB */}}
+{{- if .Values.runway.vector.enabled }}
+  {{- if not .Values.runway.vector.url }}
+    {{- fail "runway.vector.enabled: true 인데 vector.url이 비어 있습니다.\n  예) http://<Qdrant 릴리스명>.<프로젝트>.svc.cluster.local:6333" }}
+  {{- end }}
+  {{- if hasSuffix "/" .Values.runway.vector.url }}
+    {{- fail (printf "runway.vector.url 끝의 '/'를 빼세요: %q" .Values.runway.vector.url) }}
+  {{- end }}
+{{- end }}
+
+{{/* 임베딩 — 조합 검사. 여기서 안 잡으면 첫 업로드에서 죽습니다. */}}
+{{- $provider := .Values.runway.embedding.provider }}
+{{- if not (has $provider (list "auto" "gateway" "local")) }}
+  {{- fail (printf "runway.embedding.provider는 auto|gateway|local 중 하나여야 합니다: %q" $provider) }}
+{{- end }}
+{{- if and (eq $provider "gateway") (not .Values.runway.embedding.gatewayModel) }}
+  {{- fail "embedding.provider: gateway 인데 embedding.gatewayModel이 비어 있습니다.\n  기본 설치의 LiteLLM에는 임베딩 모델이 등록되어 있지 않을 수 있습니다. <baseUrl>/models로 확인하세요." }}
+{{- end }}
+{{- if and .Values.runway.vector.enabled (eq $provider "local") (not .Values.runway.storage.enabled) }}
+  {{- fail "로컬 임베딩을 쓰면서 스토리지를 끄면, 파드가 재시작할 때마다 모델 가중치를 다시 내려받습니다.\n  runway.storage.enabled: true 로 PVC를 붙이거나, 게이트웨이 임베딩을 쓰세요." }}
+{{- end }}
+
+{{/* 스토리지 */}}
+{{- if and .Values.runway.storage.enabled (not .Values.runway.storage.existingClaim) }}
+  {{- fail "runway.storage.enabled: true 인데 storage.existingClaim이 비어 있습니다.\n  이 차트는 PVC를 만들지 않습니다 — 스토리지 페이지에서 만든 볼륨 ID를 넣으세요." }}
+{{- end }}
+
+{{/* 외부 노출 */}}
+{{- if .Values.runway.httpRoute.enabled }}
+
+  {{- if not .Values.runway.httpRoute.hostnames }}
+    {{- fail "runway.httpRoute.enabled: true 이면 hostnames가 필요합니다. FQDN을 최소 하나 넣으세요. 예) llm-tutorial.<도메인>" }}
+  {{- end }}
+
+  {{- range .Values.runway.httpRoute.hostnames }}
+    {{- if ne . (lower .) }}
+      {{- fail (printf "hostnames에 대문자가 있습니다: %q → %q 로 쓰세요.\n  Gateway API가 정규식으로 거부하고, 그 실패는 Argo CD sync 오류로 나타납니다." . (lower .)) }}
+    {{- end }}
+    {{- if not (regexMatch "^(\\*\\.)?[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$" .) }}
+      {{- fail (printf "hostnames 항목 %q 가 올바른 DNS 호스트명이 아닙니다. a-z, 0-9, '-' 만, 점으로 나뉜 라벨이어야 합니다." .) }}
+    {{- end }}
+  {{- end }}
+
+  {{- if ne (int .Values.runway.httpRoute.targetPort) (int .Values.service.port) }}
+    {{- fail (printf "runway.httpRoute.targetPort (%v) 와 service.port (%v) 가 다릅니다. 라우트가 존재하지 않는 포트로 갑니다." .Values.runway.httpRoute.targetPort .Values.service.port) }}
+  {{- end }}
+
+{{- end }}

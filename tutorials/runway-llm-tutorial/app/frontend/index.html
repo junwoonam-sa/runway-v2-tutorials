@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Runway LLM 튜토리얼 챗봇</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="status-dot" title="상태"></span>
+      <strong>Runway LLM 튜토리얼</strong>
+      <span class="muted" id="model-name">모델 확인 중…</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="badge" id="tool-mode" title="에이전트가 도구를 쓰는 방식"></span>
+      <button id="status-toggle" class="ghost" aria-expanded="false" aria-controls="status-panel">
+        <span class="state-dot" id="status-dot-badge"></span>
+        <span id="status-label">확인 중…</span>
+      </button>
+      <button id="docs-toggle" class="ghost">문서</button>
+    </div>
+  </header>
+
+  <!--
+    상태 패널. 문제가 있으면 첫 화면에서 저절로 펼쳐집니다 — 터미널을 쓰지 않는
+    사람도 무엇이 잘못됐는지 알 수 있어야 하기 때문입니다.
+  -->
+  <section id="status-panel" class="status-panel hidden" aria-label="설정 상태">
+    <div class="status-head">
+      <h2>설정 상태</h2>
+      <button id="status-refresh" class="ghost small-btn" type="button">다시 확인</button>
+    </div>
+    <ul id="status-list" class="status-list"></ul>
+  </section>
+
+  <main>
+    <section id="chat" class="chat" aria-live="polite">
+      <div class="empty" id="empty-state">
+        <h1>무엇을 도와드릴까요?</h1>
+        <p class="muted">
+          문서를 올려 두면 어시스턴트가 <code>search_documents</code> 도구로 직접 찾아봅니다.
+        </p>
+      </div>
+    </section>
+
+    <aside id="docs-panel" class="docs hidden" aria-label="문서">
+      <h2>색인된 문서</h2>
+      <pre id="docs-list" class="docs-list">불러오는 중…</pre>
+      <label class="upload">
+        <input type="file" id="file-input" multiple accept=".md,.markdown,.txt,.rst" hidden />
+        <span class="button">파일 올리기 (.md .txt)</span>
+      </label>
+      <p class="muted small">
+        업로드하면 청크로 나뉘어 임베딩되고 Qdrant에 저장됩니다. 같은 이름을 다시 올리면
+        기존 것을 지우고 새로 넣습니다.
+      </p>
+      <div id="docs-log" class="docs-log"></div>
+    </aside>
+  </main>
+
+  <p id="blocked-note" class="blocked-note hidden"></p>
+
+  <form id="composer" class="composer">
+    <textarea id="input" rows="1" placeholder="메시지를 입력하세요 (Shift+Enter 줄바꿈)"></textarea>
+    <button id="send" type="submit">보내기</button>
+    <button id="stop" type="button" class="ghost hidden">중지</button>
+  </form>
+
+  <dialog id="password-dialog">
+    <form method="dialog">
+      <h2>접근 비밀번호</h2>
+      <p class="muted small">이 배포는 공유 비밀번호를 요구하도록 설정되어 있습니다.</p>
+      <input type="password" id="password-input" autocomplete="current-password" />
+      <button value="ok">확인</button>
+    </form>
+  </dialog>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+{{- $secret := include "llm-tutorial.secretName" . -}}
+{{- $openbao := include "llm-tutorial.openbaoEnabled" . -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "llm-tutorial.fullname" . }}
+  labels:
+    {{- include "llm-tutorial.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "llm-tutorial.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- if $openbao }}
+        {{- include "llm-tutorial.openbaoAnnotations" . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "llm-tutorial.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: app
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
+          env:
+            - name: LLM_BASE_URL
+              value: {{ .Values.runway.llm.baseUrl | quote }}
+            - name: LLM_MODEL
+              value: {{ .Values.runway.llm.model | quote }}
+            - name: LLM_TEMPERATURE
+              value: {{ .Values.runway.llm.temperature | quote }}
+            - name: LLM_MAX_TOKENS
+              value: {{ .Values.runway.llm.maxTokens | quote }}
+            - name: LLM_SYSTEM_PROMPT
+              value: {{ .Values.runway.llm.systemPrompt | quote }}
+            - name: LLM_MAX_TOOL_ROUNDS
+              value: {{ .Values.runway.llm.maxToolRounds | quote }}
+            - name: VAULT_SECRETS_DIR
+              value: {{ .Values.runway.openbao.mountPath | quote }}
+            {{- if .Values.runway.vector.enabled }}
+            - name: QDRANT_URL
+              value: {{ .Values.runway.vector.url | quote }}
+            - name: QDRANT_COLLECTION
+              value: {{ .Values.runway.vector.collection | quote }}
+            {{- end }}
+            - name: EMBEDDING_PROVIDER
+              value: {{ .Values.runway.embedding.provider | quote }}
+            - name: EMBEDDING_MODEL_GATEWAY
+              value: {{ .Values.runway.embedding.gatewayModel | quote }}
+            - name: EMBEDDING_MODEL_LOCAL
+              value: {{ .Values.runway.embedding.localModel | quote }}
+            - name: EMBEDDING_CACHE_DIR
+              value: {{ .Values.runway.embedding.cachePath | quote }}
+            {{- if .Values.runway.certs.enabled }}
+            - name: CA_BUNDLE
+              value: "/etc/ssl/runway/{{ .Values.runway.certs.key }}"
+            {{- end }}
+            {{/*
+              스레드 풀을 컨테이너 CPU 리밋에 맞춥니다. 계산 라이브러리는 풀 크기를
+              **호스트의 코어 수**로 잡기 때문에, 1코어 컨테이너가 64코어 노드에서
+              스레드 64개를 띄우고 서로 다투다 CFS 스로틀링까지 겹쳐 단일 스레드보다
+              수십 배 느려집니다. 증상이 "GPU를 붙였는데 느리다"로 나타납니다.
+            */}}
+            - name: OMP_NUM_THREADS
+              value: {{ include "llm-tutorial.cpuThreads" . | quote }}
+            - name: MKL_NUM_THREADS
+              value: {{ include "llm-tutorial.cpuThreads" . | quote }}
+            - name: OPENBLAS_NUM_THREADS
+              value: {{ include "llm-tutorial.cpuThreads" . | quote }}
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if $secret }}
+          envFrom:
+            - secretRef:
+                name: {{ $secret }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{/*
+            프로브는 /healthz만 봅니다 — 게이트웨이나 Qdrant를 건드리지 않습니다.
+            외부 의존성을 프로브에 넣으면, 그쪽이 잠깐 느려질 때 쿠버네티스가 멀쩡한
+            파드를 재시작시킵니다.
+          */}}
+          startupProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          volumeMounts:
+            {{- if .Values.runway.storage.enabled }}
+            - name: data
+              mountPath: {{ .Values.runway.storage.mountPath }}
+            {{- end }}
+            {{- if .Values.runway.certs.enabled }}
+            - name: ca
+              mountPath: /etc/ssl/runway
+              readOnly: true
+            {{- end }}
+      volumes:
+        {{- if .Values.runway.storage.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.runway.storage.existingClaim }}
+        {{- end }}
+        {{- if .Values.runway.certs.enabled }}
+        - name: ca
+          secret:
+            secretName: {{ .Values.runway.certs.secretName }}
+            {{/*
+              optional: true 가 중요합니다. 없는 Secret을 마운트하면 Pod이 FailedMount로
+              아예 뜨지 않습니다. 공인 인증서 설치본에는 platform-root-ca가 없습니다 —
+              values에 이름이 적혀 있다고 존재를 뜻하지 않습니다.
+            */}}
+            optional: true
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

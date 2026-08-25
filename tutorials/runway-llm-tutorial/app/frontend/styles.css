@@ -1,0 +1,248 @@
+/* 라이브러리 없이. 색은 CSS 변수 한 곳에 모아 두었습니다. */
+:root {
+  --bg: #ffffff;
+  --panel: #f6f7f9;
+  --border: #e2e5ea;
+  --text: #1a1c1f;
+  --muted: #6b7280;
+  --accent: #2f6feb;
+  --accent-soft: #eaf0fe;
+  --danger: #b42318;
+  --radius: 12px;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181c;
+    --panel: #1e2126;
+    --border: #2c3038;
+    --text: #e8eaed;
+    --muted: #9aa1ac;
+    --accent: #5b8dfa;
+    --accent-soft: #23304a;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.6 -apple-system, "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.brand .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.ok { background: #12b76a; }
+.dot.bad { background: var(--danger); }
+
+.badge {
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  white-space: nowrap;
+}
+.badge[data-mode="none"] { background: var(--panel); color: var(--muted); }
+
+/* --- 상태 -------------------------------------------------------------- */
+.state-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.state-dot.ok { background: #12b76a; }
+.state-dot.warn { background: #d98a00; }
+.state-dot.fail { background: var(--danger); }
+
+#status-toggle { display: inline-flex; align-items: center; gap: 7px; }
+
+.status-panel {
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  padding: 14px 16px 16px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.status-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.status-head h2 { font-size: 14px; margin: 0 0 10px; }
+.small-btn { padding: 4px 10px; font-size: 12px; }
+
+.status-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.status-item {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 10px;
+  align-items: start;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.status-item .state-dot { margin-top: 7px; }
+.status-item h3 { font-size: 13.5px; margin: 0 0 2px; font-weight: 600; }
+.status-item p { margin: 0; font-size: 13px; color: var(--muted); }
+/* 고치는 법은 증상보다 눈에 띄어야 합니다 — 사람이 다음에 할 행동이니까요. */
+.status-item .fix {
+  margin-top: 6px;
+  color: var(--text);
+  background: var(--panel);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 6px 10px;
+}
+
+.blocked-note {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--danger);
+  border-top: 1px solid var(--border);
+}
+
+main { display: flex; min-height: 0; }
+
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty { margin: auto; text-align: center; max-width: 34rem; }
+.empty h1 { font-size: 22px; margin: 0 0 6px; }
+
+.msg { display: flex; }
+.msg.user { justify-content: flex-end; }
+.msg .body {
+  max-width: min(46rem, 88%);
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  overflow-wrap: anywhere;
+}
+.msg.user .body { background: var(--accent-soft); }
+.msg .body.error { color: var(--danger); white-space: pre-wrap; }
+.msg .body pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  overflow-x: auto;
+}
+.msg .body code { background: var(--bg); padding: 1px 5px; border-radius: 5px; }
+
+.activity {
+  align-self: center;
+  max-width: min(46rem, 88%);
+  width: 100%;
+  font-size: 13px;
+  color: var(--muted);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 6px 10px;
+}
+.activity summary { cursor: pointer; }
+.activity pre { white-space: pre-wrap; margin: 8px 0 0; font-size: 12px; }
+
+.docs {
+  width: 320px;
+  flex: none;
+  border-left: 1px solid var(--border);
+  padding: 16px;
+  overflow-y: auto;
+  background: var(--panel);
+}
+.docs h2 { font-size: 14px; margin: 0 0 8px; }
+.docs-list {
+  white-space: pre-wrap;
+  font-size: 13px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  min-height: 60px;
+}
+.docs-log { white-space: pre-wrap; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.upload { display: block; margin-top: 12px; }
+
+.composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  align-items: flex-end;
+}
+textarea {
+  flex: 1;
+  resize: none;
+  font: inherit;
+  color: inherit;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  max-height: 200px;
+}
+textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+button, .button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 9px 16px;
+  background: var(--accent);
+  color: #fff;
+  display: inline-block;
+}
+button:disabled { opacity: 0.5; cursor: default; }
+button.ghost, .ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  padding: 20px;
+}
+dialog h2 { margin: 0 0 4px; font-size: 16px; }
+dialog input {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  color: inherit;
+}
+
+@media (max-width: 720px) {
+  .docs { position: fixed; inset: 52px 0 0 0; width: auto; z-index: 5; }
+}

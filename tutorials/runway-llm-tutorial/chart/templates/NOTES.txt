@@ -1,0 +1,39 @@
+{{ .Chart.Name }} {{ .Chart.Version }} 배포됨 — 릴리스 {{ .Release.Name }} / 네임스페이스 {{ .Release.Namespace }}
+
+이미지   {{ .Values.image.repository }}:{{ .Values.image.tag }}
+모델     {{ .Values.runway.llm.model }}  ({{ .Values.runway.llm.baseUrl }})
+벡터 DB  {{ if .Values.runway.vector.enabled }}{{ .Values.runway.vector.url }} / {{ .Values.runway.vector.collection }}{{ else }}꺼짐 — 문서·검색 기능이 없습니다{{ end }}
+시크릿   {{ if include "llm-tutorial.openbaoEnabled" . }}OpenBao {{ .Values.runway.openbao.secretEngine }}/data/{{ .Values.runway.openbao.secretName }} → {{ .Values.runway.openbao.mountPath }}{{ else if include "llm-tutorial.secretName" . }}Secret {{ include "llm-tutorial.secretName" . }}{{ else }}없음{{ end }}
+
+접근:
+{{- if .Values.runway.httpRoute.enabled }}
+{{- range .Values.runway.httpRoute.hostnames }}
+  https://{{ . }}
+{{- end }}
+
+  ⚠  이 호스트명 앞에는 Keycloak 로그인이 없습니다.
+     플랫폼의 로그인 강제는 호스트별 규칙 몇 개뿐이고 애플리케이션 호스트는 거기
+     포함되지 않습니다. 호스트명을 아는 사람은 누구나 이 앱으로 토큰을 씁니다.
+{{- if not .Values.runway.access.passwordRequired }}
+     지금은 공유 비밀번호도 꺼져 있습니다 — runway.access.passwordRequired 를 보세요.
+{{- end }}
+
+  콘솔의 **애플리케이션 열기 링크**에 위 URL을 직접 넣어야 [열기] 버튼이 생깁니다.
+  Runway는 이 차트의 hostnames를 읽지 않습니다 — 호스트명을 두 군데에 각각 입력하는
+  구조입니다.
+{{- else }}
+  외부 노출이 꺼져 있습니다. 포트 포워드로 접근하세요:
+
+    kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "llm-tutorial.fullname" . }} 8080:{{ .Values.service.port }}
+
+  그런 다음 http://localhost:8080
+{{- end }}
+
+확인:
+
+  kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "llm-tutorial.fullname" . }}
+  kubectl -n {{ .Release.Namespace }} logs deploy/{{ include "llm-tutorial.fullname" . }} --tail=50
+
+  로그에서 볼 것 — "MCP 서버 기동: N개 툴" 과 "임베딩: ..." 두 줄.
+  앞의 것이 없으면 MCP 자식 프로세스가 못 떴고(문서 기능 없음), 뒤의 것이 없으면
+  아직 아무도 문서를 올리지 않은 것입니다.

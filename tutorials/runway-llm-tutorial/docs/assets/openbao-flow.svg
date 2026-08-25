@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="140" viewBox="0 0 600 140"
+     role="img" aria-labelledby="bao-title bao-desc"
+     font-family="'IBM Plex Sans KR', -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif">
+  <title id="bao-title">OpenBao에서 챗봇으로 값이 전달되는 시점</title>
+  <desc id="bao-desc">OpenBao에 저장한 값이 챗봇이 실행되는 시점에 전달됩니다. 값은 OpenBao에만 있고 설정이나 이미지에는 남지 않습니다.</desc>
+
+  <defs>
+    <marker id="bao-arrow" viewBox="0 0 10 10" refX="8" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke"
+            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <rect x="60" y="40" width="180" height="44" rx="3"
+        fill="var(--accent-soft, #d7ecec)" fill-opacity="0.45"
+        stroke="var(--accent, #0c6a72)" stroke-width="1"/>
+  <text x="150" y="62" text-anchor="middle" dominant-baseline="central"
+        font-size="14" fill="var(--ink, #0f171d)">OpenBao</text>
+
+  <rect x="360" y="40" width="180" height="44" rx="3"
+        fill="var(--ground, #fbfcfd)" stroke="var(--line, #d9e2e7)" stroke-width="1"/>
+  <text x="450" y="62" text-anchor="middle" dominant-baseline="central"
+        font-size="14" fill="var(--ink, #0f171d)">챗봇</text>
+
+  <text x="300" y="46" text-anchor="middle" dominant-baseline="central"
+        font-size="12" fill="var(--ink-mute, #6d7d87)">실행 시점에 전달</text>
+  <line x1="248" y1="62" x2="352" y2="62"
+        stroke="var(--ink-mute, #6d7d87)" stroke-width="1" marker-end="url(#bao-arrow)"/>
+
+  <path d="M150 84 L150 112 L166 112" fill="none"
+        stroke="var(--line, #d9e2e7)" stroke-width="1"/>
+  <text x="176" y="112" dominant-baseline="central"
+        font-size="12" fill="var(--ink-mute, #6d7d87)">값은 여기에만 있습니다. 설정에도, 이미지에도 없습니다.</text>
+</svg>

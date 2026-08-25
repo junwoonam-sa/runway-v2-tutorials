@@ -1,0 +1,137 @@
+# 태그를 밀면 두 가지가 자동으로 게시됩니다.
+#
+#   1. 컨테이너 이미지 → ghcr.io/<계정>/runway-llm-tutorial:<버전>
+#   2. Helm 차트       → https://<계정>.github.io/<저장소>   (gh-pages 브랜치)
+#
+# 이 두 주소가 튜토리얼 본문이 그대로 쓰는 값입니다. 따라하는 사람은 아무것도
+# 빌드하지 않고 이 주소만 입력합니다 — 참조 튜토리얼이 벤더가 미리 올려 둔 이미지와
+# 리포지토리를 쓰는 것과 같은 구조입니다.
+#
+# 쓰는 법:
+#   git tag v0.1.0 && git push origin v0.1.0
+#
+# 처음 한 번만 해 둘 것:
+#   * 저장소 Settings → Actions → General → Workflow permissions → Read and write
+#   * 저장소가 public 이어야 이미지와 차트를 인증 없이 받을 수 있습니다.
+#     private이면 Runway 쪽에 자격증명을 따로 넣어야 합니다.
+
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write        # gh-pages 브랜치에 차트를 밀기 위해
+  packages: write        # ghcr.io에 이미지를 밀기 위해
+
+env:
+  HELM_VERSION: v3.16.3
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    outputs:
+      repository: ${{ steps.meta.outputs.repository }}
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 주소와 버전 정하기
+        id: meta
+        run: |
+          # 소유자 이름에 대문자가 있어도 컨테이너 레지스트리는 소문자만 받습니다.
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "repository=ghcr.io/${OWNER}/runway-llm-tutorial" >> "$GITHUB_OUTPUT"
+          # v0.1.0 -> 0.1.0. 수동 실행이면 커밋 해시를 씁니다.
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=0.0.0-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 레지스트리 로그인
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: 빌드와 푸시
+        run: |
+          IMAGE="${{ steps.meta.outputs.repository }}:${{ steps.meta.outputs.tag }}"
+          docker build -t "$IMAGE" app/
+          docker push "$IMAGE"
+          echo "::notice title=이미지 게시됨::$IMAGE"
+
+  chart:
+    needs: image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: helm 설치
+        run: |
+          curl -fsSL "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz" \
+            | tar -xz -C /tmp linux-amd64/helm
+          sudo mv /tmp/linux-amd64/helm /usr/local/bin/helm
+          helm version
+
+      - name: 차트에 이미지 주소 박아 넣기
+        # 게시되는 차트는 방금 올린 이미지를 가리켜야 합니다. 이 두 값이 비어 있으면
+        # 차트가 렌더 단계에서 거부하도록 되어 있고, 그건 소스에서 직접 쓰는 사람을
+        # 위한 안전장치입니다 — 게시본에는 값이 채워져 나갑니다.
+        run: |
+          helm version >/dev/null
+          python3 - <<'PY'
+          import re, pathlib
+          p = pathlib.Path("chart/values.yaml")
+          s = p.read_text(encoding="utf-8")
+          s = re.sub(r'(?m)^(  repository:).*$', r'\1 "${{ needs.image.outputs.repository }}"', s, count=1)
+          s = re.sub(r'(?m)^(  tag:).*$',        r'\1 "${{ needs.image.outputs.tag }}"', s, count=1)
+          p.write_text(s, encoding="utf-8")
+          print(s[s.index("image:"):s.index("image:") + 200])
+          PY
+
+      - name: 차트 버전을 태그에 맞추기
+        run: |
+          sed -i "s/^version:.*/version: ${{ needs.image.outputs.tag }}/" chart/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: \"${{ needs.image.outputs.tag }}\"/" chart/Chart.yaml
+
+      - name: 패키징
+        run: |
+          mkdir -p /tmp/charts
+          helm package ./chart -d /tmp/charts
+
+      - name: gh-pages에 게시
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 브랜치가 없으면 빈 브랜치로 시작합니다.
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages && git checkout gh-pages
+          else
+            git checkout --orphan gh-pages && git rm -rf . >/dev/null
+          fi
+
+          cp /tmp/charts/*.tgz .
+          # --merge 를 써야 예전 버전이 index.yaml에서 사라지지 않습니다.
+          BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          if [ -f index.yaml ]; then
+            helm repo index . --url "$BASE" --merge index.yaml
+          else
+            helm repo index . --url "$BASE"
+          fi
+
+          # 리포지토리 베이스 경로를 브라우저로 열면 404가 나는 것이 정상이지만,
+          # 사람이 실수로 열었을 때 무엇을 봐야 하는지 알려 주는 편이 낫습니다.
+          cat > index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>Helm repository</title>
+          <p>이 주소는 Helm 리포지토리입니다. 사람이 볼 페이지가 아닙니다.
+          Runway 애플리케이션 생성 폼의 <b>Helm 리포지토리 URL</b> 칸에 이 주소를 넣으세요.
+          <p>목록: <a href="index.yaml">index.yaml</a>
+          HTML
+
+          git add index.yaml index.html ./*.tgz
+          git commit -m "chart ${{ needs.image.outputs.tag }}" || echo "변경 없음"
+          git push origin gh-pages
+
+          echo "::notice title=차트 게시됨::$BASE (차트 llm-tutorial, 버전 ${{ needs.image.outputs.tag }})"

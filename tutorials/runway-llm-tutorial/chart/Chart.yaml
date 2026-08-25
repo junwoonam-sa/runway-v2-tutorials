@@ -1,0 +1,18 @@
+apiVersion: v2
+name: llm-tutorial
+description: Runway LLM 튜토리얼 — 에이전트·MCP·벡터 검색이 붙은 챗봇
+
+# 차트 버전은 Helm 리포지토리의 키입니다. 같은 버전을 다시 올리면 이미 올라간 것이
+# 남아 새 것이 보이지 않습니다. 차트를 고쳤으면 여기를 올리세요.
+version: 0.1.0
+
+# 이미지 태그와 맞춰 두면 "지금 배포된 게 어느 코드인지"를 한 곳에서 읽을 수 있습니다.
+appVersion: "0.1.0"
+
+type: application
+keywords:
+  - llm
+  - chatbot
+  - mcp
+  - rag
+  - tutorial

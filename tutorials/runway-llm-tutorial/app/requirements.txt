@@ -1,0 +1,10 @@
+# 최소한만 둡니다. 여기 있는 것 하나하나가 폐쇄망 설치본에서 미러링 대상이 됩니다.
+fastapi==0.141.1
+uvicorn[standard]==0.34.0
+httpx==0.28.1
+pydantic==2.13.4
+python-multipart==0.0.20
+
+# MCP 공식 SDK. 2.0에서 API 이름이 바뀌었습니다(1.x의 FastMCP → MCPServer,
+# tool.inputSchema → tool.input_schema). 버전을 고정하는 이유입니다.
+mcp==2.0.0

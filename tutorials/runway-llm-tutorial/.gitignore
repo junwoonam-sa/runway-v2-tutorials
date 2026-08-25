@@ -1,0 +1,21 @@
+# 자격증명 — 이 셋이 실수로 올라가는 경로입니다.
+.env
+.env.*
+!.env.example
+# 문서(Stage 5)가 독자에게 직접 만들라고 하는 파일. 실제 도메인·프로젝트 ID·
+# 때로는 키까지 들어갑니다.
+my-values.yaml
+values.local.yaml
+*.local.yaml
+kubeconfig*
+
+# 빌드 산출물
+*.tgz
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+
+# 런타임 데이터
+data/

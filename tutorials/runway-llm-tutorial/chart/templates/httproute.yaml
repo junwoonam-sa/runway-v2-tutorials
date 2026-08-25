@@ -1,0 +1,41 @@
+{{- if .Values.runway.httpRoute.enabled }}
+{{/*
+  apiVersion은 gateway.networking.k8s.io/v1 입니다. 이 값으로 배포와 라우팅이
+  실제로 동작하는 것이 확인되었습니다.
+*/}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "llm-tutorial.fullname" . }}-httproute
+  labels:
+    {{- include "llm-tutorial.labels" . | nindent 4 }}
+spec:
+  # 공유 플랫폼 게이트웨이의 두 리스너에 모두 붙입니다 — Runway가 제공하는
+  # 애플리케이션 템플릿들과 같은 방식입니다.
+  parentRefs:
+    - name: {{ .Values.runway.httpRoute.gateway.name }}
+      namespace: {{ .Values.runway.httpRoute.gateway.namespace }}
+      sectionName: http
+    - name: {{ .Values.runway.httpRoute.gateway.name }}
+      namespace: {{ .Values.runway.httpRoute.gateway.namespace }}
+      sectionName: https
+  hostnames:
+    {{- range .Values.runway.httpRoute.hostnames }}
+    - {{ . | quote }}
+    {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.runway.httpRoute.path | quote }}
+      filters:
+        # TLS는 게이트웨이에서 끝나므로, 원래 스킴을 백엔드에 명시적으로 알려 줍니다.
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
+      backendRefs:
+        - name: {{ include "llm-tutorial.fullname" . }}
+          port: {{ .Values.runway.httpRoute.targetPort }}
+{{- end }}

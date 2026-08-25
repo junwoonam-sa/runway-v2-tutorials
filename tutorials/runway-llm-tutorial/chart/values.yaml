@@ -1,0 +1,213 @@
+# ==============================================================================
+# Runway LLM 튜토리얼 챗봇 — 값
+#
+# `runway:` 아래는 이 차트가 직접 쓰는 값입니다. 그 밖은 흔한 워크로드 값입니다.
+#
+# 필수값에 그럴듯한 기본값을 두지 않았습니다. 비워 두면 `helm template` 단계에서
+# 이름을 대며 거부합니다 — Pod이 정상적으로 뜬 다음 사용자의 첫 클릭에서 죽는 것보다
+# 진단 비용이 훨씬 낮기 때문입니다.
+# ==============================================================================
+
+runway:
+  # ---------------------------------------------------------------------------
+  # LLM 게이트웨이
+  # ---------------------------------------------------------------------------
+  llm:
+    # OpenAI 호환 base URL. `/v1`까지 포함합니다.
+    #
+    #   인클러스터(권장): http://litellm.runway-applications.svc.cluster.local:4000/v1
+    #   게이트웨이 경유:  https://llm.<도메인>/v1
+    #
+    # 인클러스터 주소는 인그레스를 건너뛰므로 빠르고, TLS 신뢰 문제도 생기지 않습니다.
+    # 애플리케이션 네임스페이스 이름은 설치본마다 다를 수 있으니 확인하세요.
+    baseUrl: "http://litellm.runway-applications.svc.cluster.local:4000/v1"
+
+    # 게이트웨이가 publish한 model_name 그대로. 관리자가 litellm-config ConfigMap에
+    # 손으로 적어 넣은 문자열이라 추측할 수 없습니다. 목록:
+    #   curl -H "Authorization: Bearer sk-..." <baseUrl>/models
+    model: ""
+
+    temperature: 0.7
+    maxTokens: 0            # 0 = 모델 기본값
+
+    # 항상 대화 맨 앞에 붙고 사용자가 지울 수 없습니다 — 기본값이 아니라 가드레일입니다.
+    systemPrompt: ""
+
+    # 툴 호출 왕복 상한. 모델이 툴만 부르며 도는 것을 막습니다.
+    maxToolRounds: 3
+
+  # ---------------------------------------------------------------------------
+  # 자격증명
+  #
+  # 세 가지 방법이 있고, 이 튜토리얼은 **OpenBao**를 권합니다.
+  #
+  #   1. openbao        (권장) 시크릿이 values에도 Argo CD 리소스 트리에도 남지 않음
+  #   2. existingSecret 직접 만든 Secret을 참조
+  #   3. create + data  차트가 Secret을 만듦 — 값이 애플리케이션을 볼 수 있는 모두에게 보임
+  #
+  # 그리고 기억할 것: LLM 키는 **사람에게 속합니다.** 키 주인이 프로젝트에서 빠지면
+  # 이 앱이 답을 못 하게 됩니다.
+  # ---------------------------------------------------------------------------
+  openbao:
+    # KV-v2 엔진의 마운트 경로. 플랫폼이 정해 주는 이름이 없습니다 — 프로젝트 멤버가
+    # OpenBao UI/CLI에서 직접 마운트할 때 정한 이름입니다.
+    secretEngine: ""
+    # 그 엔진 안의 시크릿 이름. 차트가 `<engine>/data/<name>` 경로를 만듭니다.
+    secretName: ""
+    # 렌더 결과가 놓이는 곳. 앱이 이 디렉터리의 *.env를 전부 읽습니다.
+    mountPath: /vault/secrets
+
+  credentials:
+    existingSecret: ""
+    create: false
+    data:
+      LLM_API_KEY: ""
+      ACCESS_PASSWORD: ""
+
+  # ---------------------------------------------------------------------------
+  # 벡터 DB (Qdrant)
+  #
+  # 프로젝트에 Qdrant 애플리케이션을 설치한 뒤 그 릴리스 이름을 넣습니다.
+  # 비워 두면 문서·검색 기능이 통째로 꺼진 채 순수 챗봇으로 동작합니다.
+  #
+  # 주의: Qdrant 템플릿은 API 키를 제공하지 않고, 외부 노출을 켜도 플랫폼 로그인이
+  # 앞에 붙지 않습니다. 인클러스터 주소로만 쓰세요.
+  # ---------------------------------------------------------------------------
+  vector:
+    enabled: false
+    # 예) http://qdrant.<프로젝트>.svc.cluster.local:6333
+    url: ""
+    collection: "tutorial-docs"
+
+  embedding:
+    # auto | gateway | local
+    provider: "auto"
+    # 게이트웨이가 publish한 임베딩 모델 이름. 없으면 auto가 로컬로 내려갑니다.
+    gatewayModel: ""
+    localModel: "intfloat/multilingual-e5-small"
+    # 로컬 모델 가중치 캐시. PVC 위에 두어야 파드가 재시작해도 다시 받지 않습니다.
+    cachePath: /data/embedding-cache
+
+  # ---------------------------------------------------------------------------
+  # 스토리지
+  #
+  # 이 차트는 PVC를 만들지 않습니다 — Runway의 다른 차트들과 같은 방침입니다.
+  # 스토리지 페이지에서 만드세요. 거기서는 크기가 프로젝트 쿼터에 어떻게 잡히는지
+  # 보입니다.
+  #
+  # 로컬 임베딩을 쓸 때만 필요합니다. 게이트웨이 임베딩만 쓴다면 꺼 두세요.
+  # ---------------------------------------------------------------------------
+  storage:
+    enabled: false
+    existingClaim: ""
+    mountPath: /data
+
+  # ---------------------------------------------------------------------------
+  # 접근 제어
+  #
+  # Runway는 애플리케이션 호스트명 앞에 Keycloak 로그인을 붙이지 않습니다. 플랫폼의
+  # 로그인 강제는 호스트별 규칙 네 개뿐이고 애플리케이션 호스트는 거기 없습니다.
+  # 호스트명을 아는 사람은 누구나 이 앱으로 토큰을 씁니다.
+  #
+  # 방어 두 가지, 그리고 둘은 겹쳐 씁니다:
+  #   * httpRoute.enabled를 끄고 port-forward로만 접근
+  #   * 공유 비밀번호를 켜기 (Secret의 ACCESS_PASSWORD 필요)
+  # ---------------------------------------------------------------------------
+  access:
+    passwordRequired: false
+
+  # ---------------------------------------------------------------------------
+  # TLS 신뢰
+  #
+  # llm.baseUrl이 https이고 설치본이 사설 인증서를 쓸 때만 필요합니다.
+  # 켜기 전에 Secret이 실제로 있는지 확인하세요 — 공인 인증서 설치본에는 없습니다:
+  #   kubectl -n <프로젝트> get secret platform-root-ca
+  # 마운트는 optional이고 앱이 파일 존재를 확인하므로, 잘못 켜도 파드가 죽지는 않습니다.
+  # ---------------------------------------------------------------------------
+  certs:
+    enabled: false
+    secretName: platform-root-ca
+    key: ca.crt
+
+  httpRoute:
+    # 기본은 꺼짐 — 위의 access 설명 참고. 켜면 hostnames가 필수가 됩니다.
+    enabled: false
+
+    # 반드시 **소문자**. Gateway API가 대문자를 정규식으로 거부하고, 그 실패는
+    # Argo CD sync 오류로 나타납니다. 이 차트는 렌더 단계에서 먼저 막습니다.
+    hostnames: []
+    #  - "llm-tutorial.example.com"
+
+    # service.port와 같아야 합니다.
+    targetPort: 80
+    path: /
+
+    gateway:
+      name: platform-core-gateway
+      namespace: istio-system
+
+# ==============================================================================
+# 워크로드
+# ==============================================================================
+replicaCount: 1
+
+# 이미지는 **프로젝트 조직 네임스페이스**에 push하세요. 프로젝트의
+# gitea-image-pull-secret-runway-bot-token은 조직 봇 계정 자격증명이라 개인 계정
+# 저장소를 읽지 못합니다 — Pod이 ImagePullBackOff + 401로 멈춥니다.
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# 공개 레지스트리(ghcr.io)의 이미지를 쓸 때는 비워 둡니다.
+#
+# 사내 Gitea에 직접 올린 이미지를 쓴다면 여기에 프로젝트의 pull secret을 넣으세요:
+#
+#   imagePullSecrets:
+#     - name: gitea-image-pull-secret-runway-bot-token
+#
+# 그때는 이미지를 **프로젝트 조직 네임스페이스**에 올려야 합니다. 그 자격증명은
+# 조직 봇 계정 것이라 개인 계정 저장소를 읽지 못하고, 파드가 ImagePullBackOff로
+# 멈춥니다. 부록 A에 자세히 적어 두었습니다.
+imagePullSecrets: []
+
+# 비워 둡니다. HTTPRoute가 Service를 생성 이름으로 참조하므로 이름을 바꾸면
+# 백엔드 참조가 깨집니다.
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+containerPort: 8000
+
+# 이 파드는 채팅 하나당 스트리밍 연결 하나를 열어 두고, 자기 계산은 하지 않습니다
+# (모델은 다른 데서 돕니다). 로컬 임베딩을 켜면 메모리를 크게 올려야 합니다.
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+# 차트가 다루지 않는 것을 넣는 자리.
+extraEnv: []
+
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
