@@ -40,14 +40,16 @@ Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
 챗봇의 이미지와 차트가 아직 어디에도 올라가 있지 않다면, 여기서 한 번 올립니다.
 **한 사람이 한 번만 하면 되고,** 그다음부터 팀원들은 그 주소만 받아서 씁니다.
 
-> ⚠ **도커가 설치된 컴퓨터가 한 대 필요합니다.** Code Server에는 도커가 없어서
-> 이미지 빌드는 거기서 되지 않습니다. 도커가 없다면 아래 **Gitea Actions로 빌드하기**를
-> 보세요.
+빌드는 **클러스터 안에서** 일어납니다. 내 컴퓨터에 도커를 깔 필요가 없습니다 —
+Code Server에도 도커 데몬이 없고, 대신 플랫폼이 도커가 붙은 **Gitea Actions 러너**를
+미리 깔아 두었습니다. 소스를 Gitea에 올리면 러너가 이미지를 만들어 줍니다.
+
+브라우저와 Code Server 터미널만 있으면 됩니다.
 
 ### 1) 코드 받기
 
 ```bash
-git clone -b feature/runway-llm-tutorial   https://github.com/junwoonam-sa/runway-v2-tutorials.git
+git clone -b feature/runway-llm-tutorial https://github.com/junwoonam-sa/runway-v2-tutorials.git
 cd runway-v2-tutorials/tutorials/runway-llm-tutorial
 ```
 
@@ -73,22 +75,80 @@ git을 쓰지 않는다면 GitHub 화면에서 **Code → Download ZIP** 으로 
 토큰은 한 번만 표시됩니다. 그리고 **주소에 끼워 넣지 마세요** — 셸 기록과
 `.git/config` 에 남습니다.
 
-### 3) 이미지 만들어 올리기
+### 3) 소스를 Gitea 저장소에 올리기
 
-도커가 있는 컴퓨터에서:
+**프로젝트 조직 밑에** 저장소를 하나 만듭니다. 개인 계정이 아닙니다 — 이유는 곧
+나옵니다.
+
+Gitea 화면 우측 상단 **+ → New Repository**. 소유자(Owner)를 **프로젝트 ID로 된
+조직**으로 고르고, 이름은 `llm-tutorial` 로 합니다.
+
+그다음 1)에서 받은 폴더를 그 저장소로 올립니다. Code Server 터미널에서:
 
 ```bash
-docker login gitea.<도메인>
-docker build -t gitea.<도메인>/<프로젝트 ID>/llm-tutorial:0.1.0 app/
-docker push gitea.<도메인>/<프로젝트 ID>/llm-tutorial:0.1.0
+cd runway-v2-tutorials/tutorials/runway-llm-tutorial
+git init -b main
+git add -A
+git commit -m "튜토리얼 챗봇"
+git remote add origin https://gitea.<도메인>/<프로젝트 ID>/llm-tutorial.git
+git push -u origin main
 ```
 
-> ⚠ **이미지는 반드시 프로젝트 조직 밑에 올리세요.**
-> 프로젝트가 이미지를 받아올 때 쓰는 자격증명은 **조직 봇 계정** 것이라 조직 범위
-> 밖을 읽지 못합니다. 개인 계정(`gitea.<도메인>/<내계정>/...`) 밑에 올리면 파드가
-> `ImagePullBackOff` 로 멈춥니다.
+계정과 토큰을 물어보면 2)에서 만든 것을 넣으세요. 비밀번호 칸에 **토큰**을 붙여
+넣습니다.
 
-### 4) 차트가 그 이미지를 가리키게 하기
+> ⚠ **토큰을 주소에 끼워 넣지 마세요.** `https://<계정>:<토큰>@gitea...` 형태로 쓰면
+> 셸 기록과 `.git/config` 에 남고, Code Server의 홈은 재시작해도 남습니다.
+
+### 4) 러너가 살아 있는지 먼저 확인하기
+
+이미지 빌드를 맡기기 전에, 러너가 실제로 도는지 봅니다. **여기서 막히면 뒤가 전부
+막히므로 먼저 확인하는 편이 낫습니다.**
+
+저장소 화면의 **Actions** 탭을 엽니다. `build-image` 워크플로가 보이면 **Run
+workflow** 를 눌러 한 번 돌려 보세요.
+
+| 보이는 것 | 뜻 | 할 일 |
+|---|---|---|
+| 몇 초 안에 로그가 흐르기 시작 | 러너 정상 | 5)로 갑니다 |
+| `Waiting for runner…` 에서 멈춤 | 러너가 자기 이미지를 받지 못함 | 폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요 |
+| Actions 탭 자체가 없음 | 저장소에서 Actions가 꺼져 있음 | Settings → Repository → Actions 켜기 |
+
+### 5) 이미지 빌드해서 올리기
+
+저장소에 **토큰을 하나 등록해 둡니다.** 러너가 레지스트리에 로그인할 때 씁니다.
+
+**Settings → Actions → Secrets → Add Secret**
+
+| 칸 | 값 |
+|---|---|
+| 이름 | `REGISTRY_TOKEN` |
+| 값 | 2)에서 만든 토큰 (`write:package` 필요) |
+
+그다음 태그를 밀면 빌드가 시작됩니다.
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Actions 탭에서 진행을 볼 수 있습니다. 끝나면 로그 마지막에 이렇게 나옵니다.
+
+```
+올라간 이미지 — chart/values.yaml 에 이 두 값을 적으세요:
+  repository: gitea.<도메인>/<프로젝트 ID>/llm-tutorial
+  tag:        0.1.0
+```
+
+> ⚠ **이미지가 프로젝트 조직 밑에 있어야 합니다.** 워크플로는 저장소가 속한 조직에
+> 이미지를 올립니다. 그래서 3)에서 저장소를 개인 계정이 아니라 프로젝트 조직에
+> 만든 것입니다. 프로젝트가 이미지를 받아올 때 쓰는 자격증명은 **조직 봇 계정** 것이라
+> 조직 밖을 읽지 못하고, 개인 계정 밑에 있으면 파드가 `ImagePullBackOff` 로 멈춥니다.
+
+> **같은 태그를 다시 쓰지 마세요.** 쿠버네티스는 이미 받아 둔 이미지를 다시 받지
+> 않습니다. 코드를 고쳤다면 `v0.1.1`, `v0.1.2` 로 올리세요.
+
+### 6) 차트가 그 이미지를 가리키게 하기
 
 `chart/values.yaml` 에서 두 곳을 채웁니다.
 
@@ -101,12 +161,13 @@ imagePullSecrets:
   - name: gitea-image-pull-secret-runway-bot-token
 ```
 
-### 5) 차트 올리기
+### 7) 차트 올리기
 
 저장소에 들어 있는 스크립트가 묶어서 올려 줍니다. **helm이 없어도 됩니다.**
 
 ```bash
-GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<프로젝트 ID>   scripts/package-chart.sh
+GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<프로젝트 ID> \
+  scripts/package-chart.sh
 ```
 
 토큰을 물으면 붙여 넣으세요. 끝나면 마지막 줄에 **등록할 주소**가 나옵니다.
@@ -121,13 +182,6 @@ https://gitea.<도메인>/api/packages/<프로젝트 ID>/helm
 > **이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.** Helm 리포지토리는 사람이
 > 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 `index.yaml` 을 보여 주는데,
 > 거기 `entries:` 아래에 `llm-tutorial` 과 버전이 보이면 제대로 올라간 것입니다.
-
-### 도커가 없다면 — Gitea Actions로 빌드하기
-
-플랫폼에는 도커가 붙은 Gitea Actions 러너가 이미 깔려 있습니다. 소스를 Gitea
-저장소에 push하면 클러스터 안에서 이미지를 빌드하게 할 수 있습니다. 방법은
-[부록 A](../appendix/a-self-build.md)에 있습니다. 다만 러너가 실제로 도는지
-먼저 확인하세요 — 미러가 설정되지 않은 설치본에서는 작업이 큐에서 움직이지 않습니다.
 
 ---
 

@@ -1,0 +1,66 @@
+# 컨테이너 이미지를 클러스터 안에서 빌드해 Gitea 레지스트리에 올립니다.
+#
+# 왜 이 파일이 있나:
+#   Code Server에는 도커 CLI는 있어도 데몬이 없습니다(권한 없는 Pod이라 띄울 수도
+#   없습니다). 그래서 이미지를 거기서 만들 수 없습니다. 대신 플랫폼이 미리 깔아 둔
+#   Gitea Actions 러너에 맡깁니다 — 러너에는 도커가 사이드카로 붙어 있습니다.
+#
+# 쓰기 전에 한 번만 해 둘 것:
+#   저장소 Settings → Actions → Secrets → Add Secret
+#     이름: REGISTRY_TOKEN
+#     값 : write:package 스코프가 있는 Gitea 개인 액세스 토큰
+#
+# 실행:
+#   git tag v0.1.0 && git push origin v0.1.0
+#   또는 저장소의 Actions 탭에서 Run workflow
+#
+# 태그를 재사용하지 마세요. kubelet은 이미 받아 둔 이미지를 다시 받지 않으므로
+# (imagePullPolicy: IfNotPresent), 같은 태그로 다시 올리면 노드는 옛 이미지를 계속
+# 씁니다. 증상이 "고쳤는데 반영이 안 된다"로 나타납니다.
+
+name: build-image
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  image:
+    # 플랫폼 러너가 붙어 있는 라벨입니다. ubuntu-22.04, ubuntu-20.04 도 있습니다.
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 주소와 태그 정하기
+        id: meta
+        run: |
+          # 이미지는 이 저장소가 속한 조직 밑으로 갑니다. 프로젝트 조직이어야 합니다 —
+          # 프로젝트가 이미지를 받아올 때 쓰는 자격증명이 조직 봇 계정 것이라,
+          # 개인 계정 밑에 올리면 파드가 ImagePullBackOff 로 멈춥니다.
+          REGISTRY="${GITHUB_SERVER_URL#https://}"
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          echo "image=${REGISTRY}/${OWNER}/llm-tutorial" >> "$GITHUB_OUTPUT"
+
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=0.0.0-${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 레지스트리 로그인
+        run: |
+          echo "${{ secrets.REGISTRY_TOKEN }}" \
+            | docker login "${GITHUB_SERVER_URL#https://}" \
+                --username "${{ github.actor }}" --password-stdin
+
+      - name: 빌드와 푸시
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}"
+          docker build -t "$IMAGE" app/
+          docker push "$IMAGE"
+          echo
+          echo "올라간 이미지 — chart/values.yaml 에 이 두 값을 적으세요:"
+          echo "  repository: ${{ steps.meta.outputs.image }}"
+          echo "  tag:        ${{ steps.meta.outputs.tag }}"

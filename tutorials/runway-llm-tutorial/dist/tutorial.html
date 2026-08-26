@@ -1424,9 +1424,10 @@ Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
 <h2 id="bot-1-코드를-받아-사내-gitea에-올리기">코드를 받아 사내 Gitea에 올리기</h2>
 <p>주소를 이미 받았다면 <a href="#bot-1-애플리케이션-만들기">이 절은 건너뛰세요</a>.</p>
 <p>챗봇의 이미지와 차트가 아직 어디에도 올라가 있지 않다면, 여기서 한 번 올립니다. <strong>한 사람이 한 번만 하면 되고,</strong> 그다음부터 팀원들은 그 주소만 받아서 씁니다.</p>
-<aside class="callout warn"><p class="callout-label">주의</p><p><strong>도커가 설치된 컴퓨터가 한 대 필요합니다.</strong> Code Server에는 도커가 없어서 이미지 빌드는 거기서 되지 않습니다. 도커가 없다면 아래 <strong>Gitea Actions로 빌드하기</strong>를 보세요.</p></aside>
+<p>빌드는 <strong>클러스터 안에서</strong> 일어납니다. 내 컴퓨터에 도커를 깔 필요가 없습니다 — Code Server에도 도커 데몬이 없고, 대신 플랫폼이 도커가 붙은 <strong>Gitea Actions 러너</strong>를 미리 깔아 두었습니다. 소스를 Gitea에 올리면 러너가 이미지를 만들어 줍니다.</p>
+<p>브라우저와 Code Server 터미널만 있으면 됩니다.</p>
 <h3 id="bot-1-1-코드-받기">1) 코드 받기</h3>
-<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git clone -b feature/runway-llm-tutorial   https://github.com/junwoonam-sa/runway-v2-tutorials.git
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git clone -b feature/runway-llm-tutorial https://github.com/junwoonam-sa/runway-v2-tutorials.git
 cd runway-v2-tutorials/tutorials/runway-llm-tutorial</code></pre></div>
 <p>git을 쓰지 않는다면 GitHub 화면에서 <strong>Code → Download ZIP</strong> 으로 받아 풀어도 됩니다.</p>
 <h3 id="bot-1-2-gitea에-로그인하고-토큰-만들기">2) Gitea에 로그인하고 토큰 만들기</h3>
@@ -1435,13 +1436,36 @@ cd runway-v2-tutorials/tutorials/runway-llm-tutorial</code></pre></div>
 <div class="table-wrap"><table><thead><tr><th>스코프</th><th>무엇에 필요한가</th></tr></thead><tbody><tr><td><code>write:package</code></td><td>이미지와 차트 올리기</td></tr><tr><td><code>write:repository</code></td><td>소스도 함께 올릴 때</td></tr></tbody></table></div>
 <aside class="callout warn"><p class="callout-label">주의</p><p><strong><code>write:repository</code> 만으로는 실패합니다.</strong> 이미지와 차트는 저장소가 아니라 <strong>패키지 레지스트리</strong>에 올라갑니다. 오류 메시지가 <code>authGroup.Verify</code> 처럼 나와서 원인을 알기 어렵습니다.</p></aside>
 <p>토큰은 한 번만 표시됩니다. 그리고 <strong>주소에 끼워 넣지 마세요</strong> — 셸 기록과 <code>.git/config</code> 에 남습니다.</p>
-<h3 id="bot-1-3-이미지-만들어-올리기">3) 이미지 만들어 올리기</h3>
-<p>도커가 있는 컴퓨터에서:</p>
-<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>docker login gitea.&lt;도메인&gt;
-docker build -t gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial:0.1.0 app/
-docker push gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial:0.1.0</code></pre></div>
-<aside class="callout warn"><p class="callout-label">주의</p><p><strong>이미지는 반드시 프로젝트 조직 밑에 올리세요.</strong> 프로젝트가 이미지를 받아올 때 쓰는 자격증명은 <strong>조직 봇 계정</strong> 것이라 조직 범위 밖을 읽지 못합니다. 개인 계정(<code>gitea.&lt;도메인&gt;/&lt;내계정&gt;/...</code>) 밑에 올리면 파드가 <code>ImagePullBackOff</code> 로 멈춥니다.</p></aside>
-<h3 id="bot-1-4-차트가-그-이미지를-가리키게-하기">4) 차트가 그 이미지를 가리키게 하기</h3>
+<h3 id="bot-1-3-소스를-gitea-저장소에-올리기">3) 소스를 Gitea 저장소에 올리기</h3>
+<p><strong>프로젝트 조직 밑에</strong> 저장소를 하나 만듭니다. 개인 계정이 아닙니다 — 이유는 곧 나옵니다.</p>
+<p>Gitea 화면 우측 상단 <strong>+ → New Repository</strong>. 소유자(Owner)를 <strong>프로젝트 ID로 된 조직</strong>으로 고르고, 이름은 <code>llm-tutorial</code> 로 합니다.</p>
+<p>그다음 1)에서 받은 폴더를 그 저장소로 올립니다. Code Server 터미널에서:</p>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>cd runway-v2-tutorials/tutorials/runway-llm-tutorial
+git init -b main
+git add -A
+git commit -m &quot;튜토리얼 챗봇&quot;
+git remote add origin https://gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial.git
+git push -u origin main</code></pre></div>
+<p>계정과 토큰을 물어보면 2)에서 만든 것을 넣으세요. 비밀번호 칸에 <strong>토큰</strong>을 붙여 넣습니다.</p>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong>토큰을 주소에 끼워 넣지 마세요.</strong> <code>https://&lt;계정&gt;:&lt;토큰&gt;@gitea...</code> 형태로 쓰면 셸 기록과 <code>.git/config</code> 에 남고, Code Server의 홈은 재시작해도 남습니다.</p></aside>
+<h3 id="bot-1-4-러너가-살아-있는지-먼저-확인하기">4) 러너가 살아 있는지 먼저 확인하기</h3>
+<p>이미지 빌드를 맡기기 전에, 러너가 실제로 도는지 봅니다. <strong>여기서 막히면 뒤가 전부 막히므로 먼저 확인하는 편이 낫습니다.</strong></p>
+<p>저장소 화면의 <strong>Actions</strong> 탭을 엽니다. <code>build-image</code> 워크플로가 보이면 <strong>Run workflow</strong> 를 눌러 한 번 돌려 보세요.</p>
+<div class="table-wrap"><table><thead><tr><th>보이는 것</th><th>뜻</th><th>할 일</th></tr></thead><tbody><tr><td>몇 초 안에 로그가 흐르기 시작</td><td>러너 정상</td><td>5)로 갑니다</td></tr><tr><td><code>Waiting for runner…</code> 에서 멈춤</td><td>러너가 자기 이미지를 받지 못함</td><td>폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요</td></tr><tr><td>Actions 탭 자체가 없음</td><td>저장소에서 Actions가 꺼져 있음</td><td>Settings → Repository → Actions 켜기</td></tr></tbody></table></div>
+<h3 id="bot-1-5-이미지-빌드해서-올리기">5) 이미지 빌드해서 올리기</h3>
+<p>저장소에 <strong>토큰을 하나 등록해 둡니다.</strong> 러너가 레지스트리에 로그인할 때 씁니다.</p>
+<p><strong>Settings → Actions → Secrets → Add Secret</strong></p>
+<div class="table-wrap"><table><thead><tr><th>칸</th><th>값</th></tr></thead><tbody><tr><td>이름</td><td><code>REGISTRY_TOKEN</code></td></tr><tr><td>값</td><td>2)에서 만든 토큰 (<code>write:package</code> 필요)</td></tr></tbody></table></div>
+<p>그다음 태그를 밀면 빌드가 시작됩니다.</p>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git tag v0.1.0
+git push origin v0.1.0</code></pre></div>
+<p>Actions 탭에서 진행을 볼 수 있습니다. 끝나면 로그 마지막에 이렇게 나옵니다.</p>
+<div class="code block figure"><pre><code>올라간 이미지 — chart/values.yaml 에 이 두 값을 적으세요:
+  repository: gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial
+  tag:        0.1.0</code></pre></div>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong>이미지가 프로젝트 조직 밑에 있어야 합니다.</strong> 워크플로는 저장소가 속한 조직에 이미지를 올립니다. 그래서 3)에서 저장소를 개인 계정이 아니라 프로젝트 조직에 만든 것입니다. 프로젝트가 이미지를 받아올 때 쓰는 자격증명은 <strong>조직 봇 계정</strong> 것이라 조직 밖을 읽지 못하고, 개인 계정 밑에 있으면 파드가 <code>ImagePullBackOff</code> 로 멈춥니다.</p>
+<p><strong>같은 태그를 다시 쓰지 마세요.</strong> 쿠버네티스는 이미 받아 둔 이미지를 다시 받지 않습니다. 코드를 고쳤다면 <code>v0.1.1</code>, <code>v0.1.2</code> 로 올리세요.</p></aside>
+<h3 id="bot-1-6-차트가-그-이미지를-가리키게-하기">6) 차트가 그 이미지를 가리키게 하기</h3>
 <p><code>chart/values.yaml</code> 에서 두 곳을 채웁니다.</p>
 <div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>image:
   repository: &quot;gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial&quot;
@@ -1449,15 +1473,14 @@ docker push gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial:0.1.0</
 
 imagePullSecrets:
   - name: gitea-image-pull-secret-runway-bot-token</code></pre></div>
-<h3 id="bot-1-5-차트-올리기">5) 차트 올리기</h3>
+<h3 id="bot-1-7-차트-올리기">7) 차트 올리기</h3>
 <p>저장소에 들어 있는 스크립트가 묶어서 올려 줍니다. <strong>helm이 없어도 됩니다.</strong></p>
-<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>GITEA_HOST=gitea.&lt;도메인&gt; GITEA_USER=&lt;계정&gt; GITEA_OWNER=&lt;프로젝트 ID&gt;   scripts/package-chart.sh</code></pre></div>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>GITEA_HOST=gitea.&lt;도메인&gt; GITEA_USER=&lt;계정&gt; GITEA_OWNER=&lt;프로젝트 ID&gt; \
+  scripts/package-chart.sh</code></pre></div>
 <p>토큰을 물으면 붙여 넣으세요. 끝나면 마지막 줄에 <strong>등록할 주소</strong>가 나옵니다.</p>
 <div class="code block figure"><pre><code>https://gitea.&lt;도메인&gt;/api/packages/&lt;프로젝트 ID&gt;/helm</code></pre></div>
 <p>이 주소를 <a href="#prep-1">0-1 템플릿 ②</a>의 <code>차트 리포지토리</code> 줄에 적어 두세요. 바로 아래에서 씁니다.</p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.</strong> Helm 리포지토리는 사람이 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 <code>index.yaml</code> 을 보여 주는데, 거기 <code>entries:</code> 아래에 <code>llm-tutorial</code> 과 버전이 보이면 제대로 올라간 것입니다.</p></aside>
-<h3 id="bot-1-도커가-없다면-gitea-actions로-빌드하기">도커가 없다면 — Gitea Actions로 빌드하기</h3>
-<p>플랫폼에는 도커가 붙은 Gitea Actions 러너가 이미 깔려 있습니다. 소스를 Gitea 저장소에 push하면 클러스터 안에서 이미지를 빌드하게 할 수 있습니다. 방법은 <a href="#app-a">부록 A</a>에 있습니다. 다만 러너가 실제로 도는지 먼저 확인하세요 — 미러가 설정되지 않은 설치본에서는 작업이 큐에서 움직이지 않습니다.</p>
 <hr />
 <h2 id="bot-1-애플리케이션-만들기">애플리케이션 만들기</h2>
 <p><strong>애플리케이션(Applications)</strong> → 우측 상단 <strong>+ 생성</strong>.</p>
