@@ -307,41 +307,112 @@ runway:
 
 ### YAML로 한 번에 넣기
 
-위 네 곳을 찾아 고쳐도 되지만, **YAML 탭의 내용을 전부 지우고** 아래를 붙여 넣는 편이
-확실합니다.
+위 네 곳을 찾아 고치는 대신, **YAML 탭의 내용을 전부 지우고** 아래를 통째로 붙여
+넣어도 됩니다. 바꿀 곳은 한 줄뿐입니다.
 
 ```yaml
 runway:
-  openbao:
-    secretEngine: "tutorial"      # 0-1 템플릿 ②의 '시크릿 엔진'
-    secretName: "llmchat"         # 0-1 템플릿 ②의 '시크릿 이름'
+  llm:
+    # 대부분의 설치본에서 이 주소가 그대로 맞습니다
+    baseUrl: "http://litellm.runway-applications.svc.cluster.local:4000/v1"
+    model: ""              # 비우면 실행할 때 게이트웨이에 물어보고 고릅니다
+    temperature: 0.7
+    maxTokens: 0
+    systemPrompt: ""       # 답변 말투를 정하고 싶으면 여기에
+    maxToolRounds: 3
 
+  # 0-2에서 OpenBao에 저장한 것을 가리킵니다
+  openbao:
+    secretEngine: "tutorial"
+    secretName: "llmchat"
+    mountPath: /vault/secrets
+
+  credentials:
+    existingSecret: ""
+    create: false
+    data:
+      LLM_API_KEY: ""      # 비워 두세요. 키는 OpenBao에서 옵니다
+      ACCESS_PASSWORD: ""
+
+  # 2-1에서 만든 Qdrant
   vector:
     enabled: true
-    url: "http://qdrant.<프로젝트 ID>.svc.cluster.local:6333"
+    url: "http://qdrant.<프로젝트 ID>.svc.cluster.local:6333"   # ← 바꾸세요
     collection: "tutorial-docs"
 
+  embedding:
+    provider: "auto"       # 게이트웨이를 먼저 재보고 안 되면 앱에서 계산
+    gatewayModel: ""
+    localModel: "intfloat/multilingual-e5-small"
+    cachePath: /data/embedding-cache
+
+  # 1-1에서 만든 볼륨
   storage:
     enabled: true
     existingClaim: "llm-tutorial-data"
-
-  embedding:
-    provider: "auto"              # 게이트웨이를 먼저 재보고 안 되면 앱에서 계산
+    mountPath: /data
 
   access:
-    passwordRequired: false       # 5단계에서 켭니다
+    passwordRequired: false   # 5단계에서 켭니다
+
+  certs:
+    enabled: false            # 사설 인증서 설치본에서만 켭니다
 
   httpRoute:
-    enabled: false                # 5단계에서 켭니다
+    enabled: false            # 5단계에서 켭니다
+    hostnames: []
+    targetPort: 80
+    path: /
+    gateway:
+      name: platform-core-gateway
+      namespace: istio-system
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80
+
+containerPort: 8000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+extraEnv: []
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
 ```
 
-`<프로젝트 ID>` 한 곳만 내 값으로 바꾸면 됩니다. 이미지 주소와 태그는 차트에 이미
-들어 있으므로 여기 적지 않습니다. 지운 값들은 차트 기본값으로 돌아갑니다.
+`vector.url` 의 `<프로젝트 ID>` 한 곳만 내 값으로 바꿉니다.
+
+> **이미지 주소와 태그는 여기 없습니다.** 차트를 만들 때 이미 박아 두었기 때문입니다
+> (3-1의 6단계). 여기에 또 적을 필요가 없습니다.
 
 > ⚠ **덧붙이지 말고 지우고 넣으세요.** 같은 키가 두 번 있으면 YAML은 **뒤에 나온 것을**
 > 씁니다. 앞에 적은 값이 오류 없이 무시되고, 증상은 "설정했는데 동작하지 않는다"로
 > 나타납니다.
-
 
 ### AI 모델 이름은 안 적어도 됩니다
 

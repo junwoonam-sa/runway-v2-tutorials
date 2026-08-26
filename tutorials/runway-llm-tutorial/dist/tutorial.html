@@ -1207,19 +1207,104 @@ Qdrant 주소      : http://qdrant.&lt;your-project-id&gt;.svc.cluster.local:633
 <aside class="callout warn"><p class="callout-label">주의</p><p><strong>호스트명은 전부 소문자여야 합니다.</strong> 대문자가 하나라도 있으면 배포가 실패하고, 오류 메시지가 알아보기 어려운 형태로 나옵니다.</p>
 <p>⚠ <strong>시크릿 칸 두 개는 반드시 함께 채우세요.</strong> 하나만 채우면 시크릿 전달 기능이 그냥 꺼집니다.</p></aside>
 <h3 id="dev-2-yaml로-한-번에-넣기">YAML로 한 번에 넣기</h3>
-<p><strong>YAML</strong> 탭을 누르면 차트의 값이 전부 적힌 긴 파일이 보입니다. 그 안에서 칸을 찾아 고쳐도 되지만, <strong>내용을 전부 지우고 아래를 붙여 넣는 편이 확실합니다.</strong></p>
+<p><strong>YAML</strong> 탭을 누르면 차트의 값이 전부 적힌 파일이 보입니다. 그 안에서 칸을 찾아 고치는 대신, <strong>내용을 전부 지우고 아래를 통째로 붙여 넣으세요.</strong> 바꿀 곳은 한 줄뿐입니다.</p>
 <div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>runway:
   httpRoute:
     enabled: true
-    hostname: &quot;code-&lt;프로젝트 ID&gt;.&lt;도메인&gt;&quot;   # 전부 소문자
+    hostname: &quot;code-&lt;프로젝트 ID&gt;.&lt;도메인&gt;&quot;   # ← 바꾸세요. 전부 소문자
+    hostnames: []
     targetPort: 8080
+    gateway:
+      name: platform-core-gateway
+      namespace: istio-system
 
 code-server:
+  replicaCount: 1
+
+  # 시크릿 주입 — 이 두 줄이 0-2에서 만든 것을 가리킵니다
   runway:
-    openbaoSecretEngine: &quot;tutorial&quot;    # 0-1 템플릿 ②의 &#x27;시크릿 엔진&#x27;
-    openbaoSecretName: &quot;llmchat&quot;       # 0-1 템플릿 ②의 &#x27;시크릿 이름&#x27;</code></pre></div>
-<p><code>&lt;프로젝트 ID&gt;</code> 와 <code>&lt;도메인&gt;</code> 만 내 값으로 바꿉니다. 지운 값들은 사라지는 것이 아니라 <strong>차트 기본값으로 돌아갑니다</strong> — 저장 공간 10Gi, 자원 요청, 이미지 주소가 전부 그대로입니다.</p>
-<aside class="callout warn"><p class="callout-label">주의</p><p><strong>지우지 않고 위에 덧붙이면 안 됩니다.</strong> 같은 키가 두 번 생기고, YAML은 <strong>뒤에 나온 것이 이깁니다.</strong> 원래 파일 아래쪽에도 <code>openbaoSecretEngine: &quot;&quot;</code> 이 있어서, 위에 붙여 넣으면 빈 값이 이기고 시크릿 주입이 조용히 꺼집니다. 오류도 안 나고 <code>/vault/secrets</code> 디렉터리 자체가 생기지 않습니다.</p>
+    openbaoSecretEngine: &quot;tutorial&quot;
+    openbaoSecretName: &quot;llmchat&quot;
+
+  podAnnotations: {}
+  imagePullSecrets: []
+  nameOverride: &quot;&quot;
+  fullnameOverride: &quot;&quot;
+  hostnameOverride: &quot;&quot;
+
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: &quot;&quot;
+
+  annotations: {}
+  podSecurityContext: {}
+  priorityClassName: &quot;&quot;
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  # 앱 자체 로그인 화면을 끕니다 (플랫폼이 앞에서 인증)
+  extraArgs:
+    - --auth
+    - none
+
+  securityContext:
+    enabled: true
+    fsGroup: 1000
+    runAsUser: 1000
+
+  volumePermissions:
+    enabled: true
+    securityContext:
+      runAsUser: 0
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+  # 첫 실행에 확장 프로그램을 준비하느라 30~40초가 걸립니다. 낮추지 마세요.
+  startupProbe:
+    enabled: true
+    periodSeconds: 10
+    failureThreshold: 30
+    timeoutSeconds: 3
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  lifecycle:
+    enabled: false
+
+  extraContainers: |
+  extraInitContainers: |
+  extraSecretMounts: []
+  extraConfigmapMounts: []
+
+  # 작업 화면의 홈 폴더. 경로는 /home/coder 로 고정입니다.
+  persistence:
+    enabled: true
+    size: 10Gi
+    accessMode: ReadWriteOnce
+    annotations:
+      argocd.argoproj.io/sync-options: Delete=false
+
+  extraPVCs: []
+  extraVars: []
+  envFrom: []
+  extraPorts: []</code></pre></div>
+<p><code>hostname</code> 한 줄만 내 값으로 바꿉니다. 예를 들어 프로젝트가 <code>my-project</code>, 도메인이 <code>mycompany.com</code> 이라면 <code>code-my-project.mycompany.com</code> 입니다.</p>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>이미지 주소는 일부러 뺐습니다.</strong> 적지 않으면 플랫폼이 정해 둔 최신 이미지를 그대로 씁니다. 여기에 버전을 적어 두면 나중에 플랫폼이 올라가도 옛 이미지에 묶입니다.</p>
+<p>⚠ <strong>지우지 않고 위에 덧붙이면 안 됩니다.</strong> 같은 키가 두 번 생기고, YAML은 <strong>뒤에 나온 것이 이깁니다.</strong> 원래 파일 아래쪽에도 <code>openbaoSecretEngine: &quot;&quot;</code> 이 있어서, 위에 붙여 넣으면 빈 값이 이기고 시크릿 주입이 조용히 꺼집니다. 오류도 안 나고 <code>/vault/secrets</code> 디렉터리 자체가 생기지 않습니다.</p>
 <p><strong><code>runway:</code> 가 파일에 두 번 나옵니다.</strong> 맨 위의 것은 주소(HTTPRoute)를 다루고, <code>code-server:</code> 안에 있는 것이 시크릿을 다룹니다. 시크릿 두 줄은 반드시 <strong><code>code-server:</code> 안쪽</strong>이어야 합니다.</p></aside>
 <p>호스트명 예시 — 프로젝트가 <code>my-project</code>, 도메인이 <code>mycompany.com</code> 이라면:</p>
 <div class="code block figure"><pre><code>code-my-project.mycompany.com</code></pre></div>
@@ -1566,31 +1651,102 @@ imagePullSecrets:
     existingClaim: &quot;llm-tutorial-data&quot;   # 템플릿 ②의 &#x27;PVC 이름&#x27;</code></pre></div>
 <p>나머지는 손대지 않아도 됩니다. 이미지 주소와 태그는 차트에 이미 들어 있습니다.</p>
 <h3 id="bot-1-yaml로-한-번에-넣기">YAML로 한 번에 넣기</h3>
-<p>위 네 곳을 찾아 고쳐도 되지만, <strong>YAML 탭의 내용을 전부 지우고</strong> 아래를 붙여 넣는 편이 확실합니다.</p>
+<p>위 네 곳을 찾아 고치는 대신, <strong>YAML 탭의 내용을 전부 지우고</strong> 아래를 통째로 붙여 넣어도 됩니다. 바꿀 곳은 한 줄뿐입니다.</p>
 <div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>runway:
-  openbao:
-    secretEngine: &quot;tutorial&quot;      # 0-1 템플릿 ②의 &#x27;시크릿 엔진&#x27;
-    secretName: &quot;llmchat&quot;         # 0-1 템플릿 ②의 &#x27;시크릿 이름&#x27;
+  llm:
+    # 대부분의 설치본에서 이 주소가 그대로 맞습니다
+    baseUrl: &quot;http://litellm.runway-applications.svc.cluster.local:4000/v1&quot;
+    model: &quot;&quot;              # 비우면 실행할 때 게이트웨이에 물어보고 고릅니다
+    temperature: 0.7
+    maxTokens: 0
+    systemPrompt: &quot;&quot;       # 답변 말투를 정하고 싶으면 여기에
+    maxToolRounds: 3
 
+  # 0-2에서 OpenBao에 저장한 것을 가리킵니다
+  openbao:
+    secretEngine: &quot;tutorial&quot;
+    secretName: &quot;llmchat&quot;
+    mountPath: /vault/secrets
+
+  credentials:
+    existingSecret: &quot;&quot;
+    create: false
+    data:
+      LLM_API_KEY: &quot;&quot;      # 비워 두세요. 키는 OpenBao에서 옵니다
+      ACCESS_PASSWORD: &quot;&quot;
+
+  # 2-1에서 만든 Qdrant
   vector:
     enabled: true
-    url: &quot;http://qdrant.&lt;프로젝트 ID&gt;.svc.cluster.local:6333&quot;
+    url: &quot;http://qdrant.&lt;프로젝트 ID&gt;.svc.cluster.local:6333&quot;   # ← 바꾸세요
     collection: &quot;tutorial-docs&quot;
 
+  embedding:
+    provider: &quot;auto&quot;       # 게이트웨이를 먼저 재보고 안 되면 앱에서 계산
+    gatewayModel: &quot;&quot;
+    localModel: &quot;intfloat/multilingual-e5-small&quot;
+    cachePath: /data/embedding-cache
+
+  # 1-1에서 만든 볼륨
   storage:
     enabled: true
     existingClaim: &quot;llm-tutorial-data&quot;
-
-  embedding:
-    provider: &quot;auto&quot;              # 게이트웨이를 먼저 재보고 안 되면 앱에서 계산
+    mountPath: /data
 
   access:
-    passwordRequired: false       # 5단계에서 켭니다
+    passwordRequired: false   # 5단계에서 켭니다
+
+  certs:
+    enabled: false            # 사설 인증서 설치본에서만 켭니다
 
   httpRoute:
-    enabled: false                # 5단계에서 켭니다</code></pre></div>
-<p><code>&lt;프로젝트 ID&gt;</code> 한 곳만 내 값으로 바꾸면 됩니다. 이미지 주소와 태그는 차트에 이미 들어 있으므로 여기 적지 않습니다. 지운 값들은 차트 기본값으로 돌아갑니다.</p>
-<aside class="callout warn"><p class="callout-label">주의</p><p><strong>덧붙이지 말고 지우고 넣으세요.</strong> 같은 키가 두 번 있으면 YAML은 <strong>뒤에 나온 것을</strong> 씁니다. 앞에 적은 값이 오류 없이 무시되고, 증상은 &quot;설정했는데 동작하지 않는다&quot;로 나타납니다.</p></aside>
+    enabled: false            # 5단계에서 켭니다
+    hostnames: []
+    targetPort: 80
+    path: /
+    gateway:
+      name: platform-core-gateway
+      namespace: istio-system
+
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 80
+
+containerPort: 8000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: &quot;1&quot;
+    memory: 1Gi
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  fsGroup: 10001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+imagePullSecrets: []
+nameOverride: &quot;&quot;
+fullnameOverride: &quot;&quot;
+extraEnv: []
+podAnnotations: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}</code></pre></div>
+<p><code>vector.url</code> 의 <code>&lt;프로젝트 ID&gt;</code> 한 곳만 내 값으로 바꿉니다.</p>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>이미지 주소와 태그는 여기 없습니다.</strong> 차트를 만들 때 이미 박아 두었기 때문입니다 (3-1의 6단계). 여기에 또 적을 필요가 없습니다.</p>
+<p>⚠ <strong>덧붙이지 말고 지우고 넣으세요.</strong> 같은 키가 두 번 있으면 YAML은 <strong>뒤에 나온 것을</strong> 씁니다. 앞에 적은 값이 오류 없이 무시되고, 증상은 &quot;설정했는데 동작하지 않는다&quot;로 나타납니다.</p></aside>
 <h3 id="bot-1-ai-모델-이름은-안-적어도-됩니다">AI 모델 이름은 안 적어도 됩니다</h3>
 <p>다른 안내에서는 모델 이름을 적으라고 할 수 있습니다. <strong>이 챗봇은 안 적어도 됩니다.</strong> 실행될 때 게이트웨이에 &quot;쓸 수 있는 모델이 뭐가 있냐&quot;고 직접 물어보고 알아서 고릅니다. 무엇을 골랐는지는 화면에 표시해 줍니다.</p>
 <p>특정 모델을 꼭 써야 한다면 <code>runway.llm.model</code> 에 이름을 적으면 됩니다.</p>

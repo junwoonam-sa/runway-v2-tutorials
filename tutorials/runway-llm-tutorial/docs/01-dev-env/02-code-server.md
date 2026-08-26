@@ -39,25 +39,112 @@ Code Server는 브라우저에서 열리는 작업 화면입니다. 이 튜토�
 
 ### YAML로 한 번에 넣기
 
-**YAML** 탭을 누르면 차트의 값이 전부 적힌 긴 파일이 보입니다. 그 안에서 칸을 찾아
-고쳐도 되지만, **내용을 전부 지우고 아래를 붙여 넣는 편이 확실합니다.**
+**YAML** 탭을 누르면 차트의 값이 전부 적힌 파일이 보입니다. 그 안에서 칸을 찾아
+고치는 대신, **내용을 전부 지우고 아래를 통째로 붙여 넣으세요.** 바꿀 곳은 한 줄뿐입니다.
 
 ```yaml
 runway:
   httpRoute:
     enabled: true
-    hostname: "code-<프로젝트 ID>.<도메인>"   # 전부 소문자
+    hostname: "code-<프로젝트 ID>.<도메인>"   # ← 바꾸세요. 전부 소문자
+    hostnames: []
     targetPort: 8080
+    gateway:
+      name: platform-core-gateway
+      namespace: istio-system
 
 code-server:
+  replicaCount: 1
+
+  # 시크릿 주입 — 이 두 줄이 0-2에서 만든 것을 가리킵니다
   runway:
-    openbaoSecretEngine: "tutorial"    # 0-1 템플릿 ②의 '시크릿 엔진'
-    openbaoSecretName: "llmchat"       # 0-1 템플릿 ②의 '시크릿 이름'
+    openbaoSecretEngine: "tutorial"
+    openbaoSecretName: "llmchat"
+
+  podAnnotations: {}
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+  hostnameOverride: ""
+
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+
+  annotations: {}
+  podSecurityContext: {}
+  priorityClassName: ""
+
+  service:
+    type: ClusterIP
+    port: 8080
+
+  # 앱 자체 로그인 화면을 끕니다 (플랫폼이 앞에서 인증)
+  extraArgs:
+    - --auth
+    - none
+
+  securityContext:
+    enabled: true
+    fsGroup: 1000
+    runAsUser: 1000
+
+  volumePermissions:
+    enabled: true
+    securityContext:
+      runAsUser: 0
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+
+  livenessProbe:
+    enabled: true
+  readinessProbe:
+    enabled: true
+  # 첫 실행에 확장 프로그램을 준비하느라 30~40초가 걸립니다. 낮추지 마세요.
+  startupProbe:
+    enabled: true
+    periodSeconds: 10
+    failureThreshold: 30
+    timeoutSeconds: 3
+
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  lifecycle:
+    enabled: false
+
+  extraContainers: |
+  extraInitContainers: |
+  extraSecretMounts: []
+  extraConfigmapMounts: []
+
+  # 작업 화면의 홈 폴더. 경로는 /home/coder 로 고정입니다.
+  persistence:
+    enabled: true
+    size: 10Gi
+    accessMode: ReadWriteOnce
+    annotations:
+      argocd.argoproj.io/sync-options: Delete=false
+
+  extraPVCs: []
+  extraVars: []
+  envFrom: []
+  extraPorts: []
 ```
 
-`<프로젝트 ID>` 와 `<도메인>` 만 내 값으로 바꿉니다. 지운 값들은 사라지는 것이
-아니라 **차트 기본값으로 돌아갑니다** — 저장 공간 10Gi, 자원 요청, 이미지 주소가
-전부 그대로입니다.
+`hostname` 한 줄만 내 값으로 바꿉니다. 예를 들어 프로젝트가 `my-project`, 도메인이
+`mycompany.com` 이라면 `code-my-project.mycompany.com` 입니다.
+
+> **이미지 주소는 일부러 뺐습니다.** 적지 않으면 플랫폼이 정해 둔 최신 이미지를
+> 그대로 씁니다. 여기에 버전을 적어 두면 나중에 플랫폼이 올라가도 옛 이미지에
+> 묶입니다.
 
 > ⚠ **지우지 않고 위에 덧붙이면 안 됩니다.** 같은 키가 두 번 생기고, YAML은
 > **뒤에 나온 것이 이깁니다.** 원래 파일 아래쪽에도 `openbaoSecretEngine: ""` 이
