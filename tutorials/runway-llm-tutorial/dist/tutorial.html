@@ -1309,7 +1309,7 @@ code-server:
 <p>호스트명 예시 — 프로젝트가 <code>my-project</code>, 도메인이 <code>mycompany.com</code> 이라면:</p>
 <div class="code block figure"><pre><code>code-my-project.mycompany.com</code></pre></div>
 <aside class="callout warn"><p class="callout-label">주의</p><p><strong>호스트명은 전부 소문자여야 합니다.</strong> 대문자가 하나라도 있으면 배포가 실패하고, 오류 메시지가 알아보기 어려운 형태로 나옵니다.</p>
-<p>⚠ <strong>시크릿 칸 두 개는 반드시 함께 채우세요.</strong> 하나만 채우면 시크릿 전달 기능이 그냥 꺼집니다 — 오류도 안 나고 조용히 안 됩니다.</p></aside>
+<p>⚠ <strong>시크릿 칸 두 개는 반드시 함께 채우세요.</strong> 하나만 채우면 시크릿 전달 기능이 동작하지 않습니다 .</p></aside>
 <h3 id="dev-2-애플리케이션-열기-링크">애플리케이션 열기 링크</h3>
 <p>같은 화면 아래쪽에 <strong>애플리케이션 열기 링크</strong> 라는 부분이 있습니다. 여기에 방금 정한 주소를 <strong>한 번 더</strong> 넣습니다.</p>
 <div class="code block figure"><pre><code>이름 : Code Server
@@ -1522,8 +1522,6 @@ qdrant:
     <p class="chapter-blurb">리포지토리 등록 → 차트 → values → 배포</p>
   </header>
   <div class="prose"><p>문서를 읽고 답하는 챗봇을 배포합니다.</p>
-<p>챗봇 프로그램은 <strong>미리 만들어져 있습니다.</strong> 우리가 코드를 짜지 않습니다 — 만들어 둔 것을 사내에 올려 두고, 그 주소를 Runway에 알려 주고, 내 값 몇 개를 채워 배포합니다.</p>
-<p><strong>차트 리포지토리 주소를 이미 받았다면</strong> 아래 <a href="#bot-1-애플리케이션-만들기">애플리케이션 만들기</a>로 바로 가세요. 아직 없다면 다음 절부터 시작합니다.</p>
 <hr />
 <h2 id="bot-1-시작하기-전에">시작하기 전에</h2>
 <p><a href="#prep-1">0-1의 템플릿 ②</a>가 이렇게 채워져 있어야 합니다.</p>
@@ -1542,21 +1540,34 @@ Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
 <h2 id="bot-1-코드를-받아-사내-gitea에-올리기">코드를 받아 사내 Gitea에 올리기</h2>
 <p>튜토리얼에서 사용할 코드와 데이터는 하단 저장소에 준비되어 있습니다. </p>
 <p class="repo-link"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg></span> <a href="https://github.com/junwoonam-sa/runway-v2-tutorials/tree/feature/runway-llm-tutorial" target="_blank" rel="noopener">runway-llm-tutorial</a></p>
-<p>챗봇의 이미지와 차트가 아직 어디에도 올라가 있지 않다면, 여기서 한 번 올립니다. <strong>한 사람이 한 번만 하면 되고,</strong> 그다음부터 팀원들은 그 주소만 받아서 씁니다.</p>
 <p>빌드는 <strong>클러스터 안에서</strong> 일어납니다. 도커가 붙은 <strong>Gitea Actions 러너</strong>를 이용하며, 소스를 Gitea에 올리면 러너가 이미지를 만들어 줍니다.</p>
 <p>브라우저와 Code Server 터미널만 있으면 됩니다.</p>
 <h3 id="bot-1-1-코드-내려받기">1) 코드 내려받기</h3>
-<p>명령어를 쓰지 않고 <strong>파일로 받습니다.</strong></p>
-<ol><li><a href="https://github.com/junwoonam-sa/runway-v2-tutorials/tree/feature/runway-llm-tutorial" target="_blank" rel="noopener">저장소 페이지</a>를 엽니다</li><li>초록색 <strong>Code</strong> 버튼 → <strong>Download ZIP</strong></li></ol>
+<p>명령어를 쓰지 않고 <strong>파일로 받아서 옮깁니다.</strong></p>
+<ol><li><a href="https://github.com/junwoonam-sa/runway-v2-tutorials/tree/feature/runway-llm-tutorial" target="_blank" rel="noopener">저장소 페이지</a>를 엽니다</li><li>초록색 <strong>Code</strong> 버튼 → <strong>Download ZIP</strong></li><li>받은 zip을 <strong>내 컴퓨터에서</strong> 풉니다 (더블클릭하거나 오른쪽 클릭 → 압축 풀기)</li></ol>
 <p>아래 주소를 브라우저 주소창에 넣어도 바로 받아집니다.</p>
 <div class="code block figure"><pre><code>https://github.com/junwoonam-sa/runway-v2-tutorials/archive/refs/heads/feature/runway-llm-tutorial.zip</code></pre></div>
-<p>받은 zip 파일을 <strong>Code Server로 옮깁니다.</strong> 1-2에서 만든 Code Server 화면을 열고, 왼쪽 파일 목록의 빈 곳에 파일을 <strong>끌어다 놓으면</strong> 올라갑니다.</p>
-<p>그다음 터미널에서 압축을 풉니다 (<strong>Terminal → New Terminal</strong>).</p>
+<h3 id="bot-1-필요한-것은-폴더-하나입니다">필요한 것은 폴더 하나입니다</h3>
+<p>압축을 풀면 튜토리얼이 여러 개 나오는데, 우리가 쓰는 것은 그중 하나뿐입니다.</p>
+<div class="code block figure"><pre><code>runway-v2-tutorials-feature-runway-llm-tutorial/
+└── tutorials/
+    ├── energy-demand-prediction/       ← 다른 튜토리얼
+    ├── wind-power-prediction-.../      ← 다른 튜토리얼
+    └── runway-llm-tutorial/            ← 이것만 씁니다
+        ├── app/       챗봇 프로그램. 이것이 이미지로 구워집니다
+        ├── chart/     Runway에 설치하는 방법이 적힌 차트
+        ├── docs/      지금 읽고 있는 이 문서
+        └── scripts/   차트를 묶어 올리는 스크립트</code></pre></div>
+<p><code>runway-llm-tutorial</code> 폴더 하나가 챗봇의 전부입니다. 이 폴더를 Gitea에 올린 뒤, 그 안의 <code>app/</code> 으로 <strong>이미지</strong>를 만들고 <code>chart/</code> 로 <strong>차트</strong>를 만듭니다.</p>
+<h3 id="bot-1-code-server로-옮기기">Code Server로 옮기기</h3>
+<p>1-2에서 만든 Code Server 화면을 엽니다. 왼쪽 파일 목록의 <strong>빈 곳</strong>에 <code>runway-llm-tutorial</code> <strong>폴더를 끌어다 놓습니다.</strong> 폴더째 올라갑니다.</p>
+<p>올라갔는지 터미널에서 확인합니다 (<strong>Terminal → New Terminal</strong>).</p>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>cd runway-llm-tutorial
+ls</code></pre></div>
+<p><code>app  chart  docs  samples  scripts</code> 가 보이면 됩니다. <strong>여기서부터 나오는 명령은 전부 이 폴더 안에서</strong> 실행합니다.</p>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p>브라우저가 폴더 드래그를 지원하지 않으면, zip 파일을 그대로 끌어다 놓고 터미널에서 푸는 방법도 있습니다.</p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>unzip runway-v2-tutorials-feature-runway-llm-tutorial.zip
-cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial</code></pre></div>
-<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><code>unzip: command not found</code> 가 나오면 아래로 대신 푸세요.</p>
-<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>python3 -m zipfile -e runway-v2-tutorials-feature-runway-llm-tutorial.zip .</code></pre></div></aside>
-<p>여기서부터 나오는 명령은 전부 <strong>이 폴더 안에서</strong> 실행합니다.</p>
+cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial</code></pre></div></aside>
 <h3 id="bot-1-2-gitea에-로그인하고-토큰-만들기">2) Gitea에 로그인하고 토큰 만들기</h3>
 <p><strong>콘솔 → Built-in Apps → Gitea</strong> 카드로 들어갑니다. <strong>이 경로로 들어가야 합니다</strong> — 프로젝트 조직은 SSO로 로그인하는 순간에 만들어져서, 한 번도 들어간 적이 없으면 조직이 아예 안 보이고 404가 뜹니다.</p>
 <p><strong>프로필 → Settings → Applications → Generate Token.</strong> 스코프 두 개를 켭니다.</p>
@@ -1566,7 +1577,7 @@ cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial
 <h3 id="bot-1-3-소스를-gitea-저장소에-올리기">3) 소스를 Gitea 저장소에 올리기</h3>
 <p><strong>프로젝트 조직 밑에</strong> 저장소를 하나 만듭니다. 개인 계정이 아닙니다 — 이유는 곧 나옵니다.</p>
 <p>Gitea 화면 우측 상단 <strong>+ → New Repository</strong>. 소유자(Owner)를 <strong>프로젝트 ID로 된 조직</strong>으로 고르고, 이름은 <code>llm-tutorial</code> 로 합니다.</p>
-<p>그다음 1)에서 푼 폴더를 그 저장소로 올립니다. Code Server 터미널에서 (1)의 마지막 <code>cd</code> 를 한 상태여야 합니다):</p>
+<p>그다음 방금 올린 폴더를 그 저장소로 보냅니다. Code Server 터미널에서 <code>runway-llm-tutorial</code> 폴더 안에 있는지 먼저 확인하세요(<code>ls</code> 하면 <code>app</code> 이 보입니다).</p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git init -b main
 git add -A
 git commit -m &quot;튜토리얼 챗봇&quot;

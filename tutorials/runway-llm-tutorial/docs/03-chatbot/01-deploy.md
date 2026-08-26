@@ -49,10 +49,11 @@ Code Server에도 도커 데몬이 없고, 대신 플랫폼이 도커가 붙은 
 
 ### 1) 코드 내려받기
 
-명령어를 쓰지 않고 **파일로 받습니다.**
+명령어를 쓰지 않고 **파일로 받아서 옮깁니다.**
 
 1. [저장소 페이지](https://github.com/junwoonam-sa/runway-v2-tutorials/tree/feature/runway-llm-tutorial)를 엽니다
 2. 초록색 **Code** 버튼 → **Download ZIP**
+3. 받은 zip을 **내 컴퓨터에서** 풉니다 (더블클릭하거나 오른쪽 클릭 → 압축 풀기)
 
 아래 주소를 브라우저 주소창에 넣어도 바로 받아집니다.
 
@@ -60,23 +61,47 @@ Code Server에도 도커 데몬이 없고, 대신 플랫폼이 도커가 붙은 
 https://github.com/junwoonam-sa/runway-v2-tutorials/archive/refs/heads/feature/runway-llm-tutorial.zip
 ```
 
-받은 zip 파일을 **Code Server로 옮깁니다.** 1-2에서 만든 Code Server 화면을 열고,
-왼쪽 파일 목록의 빈 곳에 파일을 **끌어다 놓으면** 올라갑니다.
+### 필요한 것은 폴더 하나입니다
 
-그다음 터미널에서 압축을 풉니다 (**Terminal → New Terminal**).
+압축을 풀면 튜토리얼이 여러 개 나오는데, 우리가 쓰는 것은 그중 하나뿐입니다.
 
-```bash
-unzip runway-v2-tutorials-feature-runway-llm-tutorial.zip
-cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial
+```
+runway-v2-tutorials-feature-runway-llm-tutorial/
+└── tutorials/
+    ├── energy-demand-prediction/       ← 다른 튜토리얼
+    ├── wind-power-prediction-.../      ← 다른 튜토리얼
+    └── runway-llm-tutorial/            ← 이것만 씁니다
+        ├── app/       챗봇 프로그램. 이것이 이미지로 구워집니다
+        ├── chart/     Runway에 설치하는 방법이 적힌 차트
+        ├── docs/      지금 읽고 있는 이 문서
+        └── scripts/   차트를 묶어 올리는 스크립트
 ```
 
-> `unzip: command not found` 가 나오면 아래로 대신 푸세요.
+`runway-llm-tutorial` 폴더 하나가 챗봇의 전부입니다. 이 폴더를 Gitea에 올린 뒤,
+그 안의 `app/` 으로 **이미지**를 만들고 `chart/` 로 **차트**를 만듭니다.
+
+### Code Server로 옮기기
+
+1-2에서 만든 Code Server 화면을 엽니다. 왼쪽 파일 목록의 **빈 곳**에
+`runway-llm-tutorial` **폴더를 끌어다 놓습니다.** 폴더째 올라갑니다.
+
+올라갔는지 터미널에서 확인합니다 (**Terminal → New Terminal**).
+
+```bash
+cd runway-llm-tutorial
+ls
+```
+
+`app  chart  docs  samples  scripts` 가 보이면 됩니다. **여기서부터 나오는 명령은
+전부 이 폴더 안에서** 실행합니다.
+
+> 브라우저가 폴더 드래그를 지원하지 않으면, zip 파일을 그대로 끌어다 놓고
+> 터미널에서 푸는 방법도 있습니다.
 >
 > ```bash
-> python3 -m zipfile -e runway-v2-tutorials-feature-runway-llm-tutorial.zip .
+> unzip runway-v2-tutorials-feature-runway-llm-tutorial.zip
+> cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial
 > ```
-
-여기서부터 나오는 명령은 전부 **이 폴더 안에서** 실행합니다.
 
 ### 2) Gitea에 로그인하고 토큰 만들기
 
@@ -106,8 +131,8 @@ cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial
 Gitea 화면 우측 상단 **+ → New Repository**. 소유자(Owner)를 **프로젝트 ID로 된
 조직**으로 고르고, 이름은 `llm-tutorial` 로 합니다.
 
-그다음 1)에서 푼 폴더를 그 저장소로 올립니다. Code Server 터미널에서 (1)의 마지막
-`cd` 를 한 상태여야 합니다):
+그다음 방금 올린 폴더를 그 저장소로 보냅니다. Code Server 터미널에서
+`runway-llm-tutorial` 폴더 안에 있는지 먼저 확인하세요(`ls` 하면 `app` 이 보입니다).
 
 ```bash
 git init -b main
