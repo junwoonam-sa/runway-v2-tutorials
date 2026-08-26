@@ -332,8 +332,25 @@ curl -s -u <계정> https://gitea.<도메인>/v2/<프로젝트 ID>/llm-tutorial/
 
 ### 7) 차트 올리기
 
-이미지는 올렸지만 Runway가 읽는 것은 **차트**입니다. 저장소에 들어 있는 스크립트가
-묶어서 올려 줍니다 — **helm이 없어도 됩니다.**
+이미지는 올렸지만 Runway가 읽는 것은 **차트**입니다.
+
+**번호가 세 개 나옵니다.** 서로 다른 것이라 헷갈리기 쉽습니다.
+
+| 무엇 | 어디서 정하나 |
+|---|---|
+| 이미지 태그 | git 태그 — `git tag v0.1.0` |
+| **차트 버전** | **`chart/Chart.yaml` 의 `version:`** |
+| appVersion | `chart/Chart.yaml` 의 `appVersion:` — 표시용 |
+
+처음 올릴 때는 그대로 두면 됩니다. **두 번째부터는 차트 버전을 올려야 합니다** —
+같은 버전을 다시 올리면 레지스트리가 덮어쓰지 않고, 화면에도 새 것이 안 보입니다.
+
+```bash
+sed -i 's/^version: .*/version: 0.1.1/' chart/Chart.yaml
+sed -i 's/^appVersion: .*/appVersion: "0.1.1"/' chart/Chart.yaml
+```
+
+저장소에 들어 있는 스크립트가 묶어서 올려 줍니다 — **helm이 없어도 됩니다.**
 
 ```bash
 GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<계정 또는 조직>   bash scripts/package-chart.sh
@@ -362,6 +379,10 @@ https://gitea.<도메인>/api/packages/<계정 또는 조직>/helm
 > **이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.** Helm 리포지토리는 사람이
 > 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 `index.yaml` 을 보여 주는데,
 > 거기 `entries:` 아래에 `llm-tutorial` 과 버전이 보이면 제대로 올라간 것입니다.
+
+> **이미 배포한 뒤에 다시 올렸다면**, 애플리케이션 화면에서 **설정 수정 → 차트 버전**을
+> 새 번호로 바꾸고 다시 배포해야 반영됩니다. 차트를 올린 것만으로는 이미 떠 있는
+> 애플리케이션이 바뀌지 않습니다.
 
 ---
 

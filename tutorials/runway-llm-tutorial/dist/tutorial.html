@@ -617,7 +617,7 @@ html { scroll-behavior: smooth; }
     <span class="nav-marker">3-1</span>
     <span class="nav-label">챗봇 배포</span>
   </a>
-  <ul class="nav-subs"><li><a href="#bot-1-시작하기-전에">시작하기 전에</a></li><li><a href="#bot-1-애플리케이션-만들기">애플리케이션 만들기</a></li><li><a href="#bot-1-helm-리포지토리-등록">Helm 리포지토리 등록</a></li><li><a href="#bot-1-차트-고르기">차트 고르기</a></li><li><a href="#bot-1-애플리케이션-열기-링크">애플리케이션 열기 링크</a></li><li><a href="#bot-1-values.yaml-수정-차트의-빈칸-채우기">values.yaml 수정 — 차트의 빈칸 채우기</a></li><li><a href="#bot-1-생성하고-배포하기">생성하고 배포하기</a></li><li><a href="#bot-1-여기까지-되면-성공">여기까지 되면 성공</a></li><li><a href="#bot-1-막혔다면">막혔다면</a></li></ul>
+  <ul class="nav-subs"><li><a href="#bot-1-시작하기-전에">시작하기 전에</a></li><li><a href="#bot-1-애플리케이션-만들기">애플리케이션 만들기</a></li><li><a href="#bot-1-helm-리포지토리-등록">Helm 리포지토리 등록</a></li><li><a href="#bot-1-차트-고르기">차트 고르기</a></li><li><a href="#bot-1-애플리케이션-열기-링크">애플리케이션 열기 링크</a></li><li><a href="#bot-1-values.yaml-수정-차트의-빈칸-채우기">values.yaml 수정</a></li><li><a href="#bot-1-생성하고-배포하기">생성하고 배포하기</a></li><li><a href="#bot-1-여기까지-되면-성공">여기까지 되면 성공</a></li><li><a href="#bot-1-막혔다면">막혔다면</a></li></ul>
 </li>
 <li class="nav-chapter">
   <a class="nav-top" href="#bot-2">
@@ -1537,7 +1537,7 @@ Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
 차트 리포지토리  : &lt;받은 주소&gt;</code></pre></div>
 <p>아래 단계에서 이 값들을 폼과 YAML에 옮겨 적습니다.</p>
 <hr />
-<h2 id="bot-1-코드를-받아-사내-gitea에-올리기">코드를 받아 사내 Gitea에 올리기</h2>
+<h2 id="bot-1-코드를-받아-사내-gitea에-올리기">코드를 받아 Gitea에 올리기</h2>
 <p>튜토리얼에서 사용할 코드와 데이터는 하단 저장소에 준비되어 있습니다. </p>
 <p class="repo-link"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg></span> <a href="https://github.com/junwoonam-sa/runway-v2-tutorials/tree/feature/runway-llm-tutorial" target="_blank" rel="noopener">runway-llm-tutorial</a></p>
 <p>빌드는 <strong>클러스터 안에서</strong> 일어납니다. 도커가 붙은 <strong>Gitea Actions 러너</strong>를 이용하며, 소스를 Gitea에 올리면 러너가 이미지를 만들어 줍니다.</p>
@@ -1646,7 +1646,13 @@ git push origin v0.1.0</code></pre></div>
 <div class="table-wrap"><table><thead><tr><th>나온 것</th><th>뜻</th><th>할 일</th></tr></thead><tbody><tr><td>태그 목록</td><td>제대로 올라갔습니다</td><td>그대로 진행</td></tr><tr><td><code>404</code></td><td>그 위치에 이미지가 없습니다</td><td><code>REGISTRY_OWNER</code> 를 확인하고 태그를 올려 다시 빌드</td></tr><tr><td><code>401</code> (토큰을 넣었는데도)</td><td>그 조직에 권한이 없습니다</td><td>프로젝트 멤버인지, Gitea에 SSO 로그인했는지 확인</td></tr></tbody></table></div>
 <p>이미지가 <strong>개인 계정</strong>에 올라가 있으면 배포 때 파드가 <code>ImagePullBackOff</code> 로 멈춥니다. 노드는 프로젝트의 봇 자격증명으로 받아 가는데, 그 봇이 개인 계정을 읽지 못하기 때문입니다. 그때는 <code>REGISTRY_OWNER</code> 를 프로젝트 ID로 고치고 태그를 올려 다시 빌드하세요.</p>
 <h3 id="bot-1-7-차트-올리기">7) 차트 올리기</h3>
-<p>이미지는 올렸지만 Runway가 읽는 것은 <strong>차트</strong>입니다. 저장소에 들어 있는 스크립트가 묶어서 올려 줍니다. <strong>helm이 없어도 됩니다.</strong></p>
+<p>이미지는 올렸지만 Runway가 읽는 것은 <strong>차트</strong>입니다.</p>
+<p><strong>번호가 세 개 나옵니다.</strong> 서로 다른 것이라 헷갈리기 쉽습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>무엇</th><th>어디서 정하나</th></tr></thead><tbody><tr><td>이미지 태그</td><td>git 태그 — <code>git tag v0.1.0</code></td></tr><tr><td><strong>차트 버전</strong></td><td><strong><code>chart/Chart.yaml</code> 의 <code>version:</code></strong></td></tr><tr><td>appVersion</td><td><code>chart/Chart.yaml</code> 의 <code>appVersion:</code> — 표시용</td></tr></tbody></table></div>
+<p>처음 올릴 때는 그대로 두면 됩니다. <strong>두 번째부터는 차트 버전을 올려야 합니다</strong> — 같은 버전을 다시 올리면 레지스트리가 덮어쓰지 않고, 화면에도 새 것이 안 보입니다.</p>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>sed -i &#x27;s/^version: .*/version: 0.1.1/&#x27; chart/Chart.yaml
+sed -i &#x27;s/^appVersion: .*/appVersion: &quot;0.1.1&quot;/&#x27; chart/Chart.yaml</code></pre></div>
+<p>저장소에 들어 있는 스크립트가 묶어서 올려 줍니다 — <strong>helm이 없어도 됩니다.</strong></p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>GITEA_HOST=gitea.&lt;도메인&gt; GITEA_USER=&lt;계정&gt; GITEA_OWNER=&lt;계정 또는 조직&gt;   bash scripts/package-chart.sh</code></pre></div>
 <p><code>GITEA_OWNER</code> 는 저장소를 만든 곳과 같습니다. 토큰을 물으면 붙여 넣으세요.</p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>앞에 <code>bash</code> 를 붙이는 이유.</strong> 브라우저로 끌어다 놓은 파일에는 실행 권한이 붙지 않습니다. 그냥 <code>scripts/package-chart.sh</code> 로 실행하면 <code>Permission denied</code> 가 납니다. <code>bash</code> 로 실행하면 권한과 무관하게 동작합니다 (<code>sudo</code> 는 도움이 되지 않습니다 — 오히려 경로를 못 찾습니다).</p></aside>
@@ -1654,7 +1660,8 @@ git push origin v0.1.0</code></pre></div>
 <div class="code block figure"><pre><code>https://gitea.&lt;도메인&gt;/api/packages/&lt;계정 또는 조직&gt;/helm</code></pre></div>
 <p>이 주소를 <a href="#prep-1">0-1 템플릿 ②</a>의 <code>차트 리포지토리</code> 줄에 적어 두세요. 바로 아래에서 씁니다.</p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>패키지 화면에 두 개가 보이면 정상입니다.</strong> 계정 페이지(<code>.../-/packages</code>)에 타입이 <code>Container</code> 인 것과 <code>Helm</code> 인 것이 각각 하나씩 생깁니다. 앞은 파드가 실행할 이미지, 뒤는 Runway가 읽을 차트입니다. <strong>등록하는 주소는 Helm 쪽입니다.</strong></p>
-<p><strong>이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.</strong> Helm 리포지토리는 사람이 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 <code>index.yaml</code> 을 보여 주는데, 거기 <code>entries:</code> 아래에 <code>llm-tutorial</code> 과 버전이 보이면 제대로 올라간 것입니다.</p></aside>
+<p><strong>이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.</strong> Helm 리포지토리는 사람이 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 <code>index.yaml</code> 을 보여 주는데, 거기 <code>entries:</code> 아래에 <code>llm-tutorial</code> 과 버전이 보이면 제대로 올라간 것입니다.</p>
+<p><strong>이미 배포한 뒤에 다시 올렸다면</strong>, 애플리케이션 화면에서 <strong>설정 수정 → 차트 버전</strong>을 새 번호로 바꾸고 다시 배포해야 반영됩니다. 차트를 올린 것만으로는 이미 떠 있는 애플리케이션이 바뀌지 않습니다.</p></aside>
 <hr />
 <h2 id="bot-1-애플리케이션-만들기">애플리케이션 만들기</h2>
 <p><strong>애플리케이션(Applications)</strong> → 우측 상단 <strong>+ 생성</strong>.</p>
@@ -1682,8 +1689,8 @@ git push origin v0.1.0</code></pre></div>
 <p>예: <code>https://llm-chat-my-project.mycompany.com</code></p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p>이 주소는 5단계에서 실제로 열 주소입니다. 지금은 적어만 두고, 3단계에서는 외부 접근을 꺼 둔 채로 확인합니다.</p></aside>
 <hr />
-<h2 id="bot-1-values.yaml-수정-차트의-빈칸-채우기">values.yaml 수정 — 차트의 빈칸 채우기</h2>
-<p>여기가 <a href="#runway">소개에서 말한 &quot;빈칸&quot;</a>입니다. 차트는 설치 설명서이고, <code>values.yaml</code> 은 사람마다 다른 값을 채우는 자리입니다.</p>
+<h2 id="bot-1-values.yaml-수정-차트의-빈칸-채우기">values.yaml 수정</h2>
+<p>차트는 설치 설명서이고, <code>values.yaml</code> 은 사람마다 다른 값을 채우는 자리입니다.</p>
 <p><strong>헬름 차트</strong> 영역은 기본으로 <strong>폼</strong> 탭이 열려 있습니다. <strong>YAML</strong> 탭을 선택한 뒤, 아래 네 곳만 내 값으로 바꿉니다.</p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p>여기 적는 값은 <strong>비밀이 아닌 것들</strong>입니다 — PVC 이름, Qdrant 주소, 엔진 이름. 비밀(<code>LLM_API_KEY</code>)은 0-2에서 OpenBao에 넣었고 여기 적지 않습니다. 왜 그렇게 나뉘는지는 <a href="#prep-2">0-2의 설명</a>에 있습니다.</p></aside>
 <div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>runway:
@@ -2112,7 +2119,7 @@ git tag v0.1.1 &amp;&amp; git push origin main --tags</code></pre></div>
 <hr />
 <p><strong>여기부터는 관리자·개발자용입니다.</strong> 사내에 직접 올려야 하는 경우가 아니면 읽지 않아도 됩니다.</p>
 <h2 id="app-a-a-3.-폐쇄망-사내-gitea에-올리기">A-3. 폐쇄망 — 사내 Gitea에 올리기</h2>
-<p>클러스터가 외부 인터넷에 못 나가면 <code>ghcr.io</code> 와 <code>github.io</code> 를 쓸 수 없습니다. 사내 Gitea에 직접 올려야 합니다.</p>
+<p>클러스터가 외부 인터넷에 못 나가면 <code>ghcr.io</code> 와 <code>github.io</code> 를 쓸 수 없습니다. 프로젝트 Gitea에 직접 올려야 합니다.</p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>본 흐름의 <a href="#bot-1">3-1</a>이 이 경로를 이미 다룹니다</strong> — 코드를 받아 Gitea에 올리고, Gitea Actions로 이미지를 빌드하고, 차트를 올려 등록 주소를 얻는 데까지. 도커가 있는 컴퓨터에서 직접 빌드하고 싶거나, 그때 무엇이 오가는지 더 알고 싶을 때 이 절을 보세요.</p></aside>
 <h3 id="app-a-gitea에-먼저-로그인">Gitea에 먼저 로그인</h3>
 <p>프로젝트 Gitea 조직은 비공개이고, <strong>조직 멤버십은 SSO로 로그인하는 순간에</strong> 만들어집니다. 한 번도 로그인한 적이 없으면 조직이 아예 안 보이고 404가 뜹니다.</p>
