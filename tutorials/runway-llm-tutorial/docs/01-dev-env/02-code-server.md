@@ -37,6 +37,29 @@ Code Server는 브라우저에서 열리는 작업 화면입니다. 이 튜토�
 
 나머지는 기본값 그대로 둡니다.
 
+### 폼 대신 YAML로 넣기
+
+화면에 **YAML** 탭이 있으면 위 표를 하나씩 채우는 대신 아래를 그대로 붙여 넣어도
+됩니다. 같은 값을 보는 두 가지 방식입니다. 폼만 보인다면 위 표대로 채우세요.
+
+```yaml
+runway:
+  httpRoute:
+    enabled: true
+    hostnames:
+      - "code-<프로젝트 ID>.<도메인>"    # 전부 소문자
+    targetPort: 8080
+
+code-server:
+  runway:
+    openbaoSecretEngine: "tutorial"    # 0-1 템플릿 ②의 '시크릿 엔진'
+    openbaoSecretName: "llmchat"       # 0-1 템플릿 ②의 '시크릿 이름'
+```
+
+`<프로젝트 ID>` 와 `<도메인>` 만 내 값으로 바꾸면 됩니다. 나머지 값(저장 공간 10Gi,
+자원 요청 등)은 템플릿 기본값을 그대로 씁니다.
+
+
 호스트명 예시 — 프로젝트가 `my-project`, 도메인이 `mycompany.com` 이라면:
 
 ```

@@ -305,6 +305,39 @@ runway:
 
 나머지는 손대지 않아도 됩니다. 이미지 주소와 태그는 차트에 이미 들어 있습니다.
 
+### 전체 values 한 번에 보기
+
+위 네 곳만 바꾸면 되지만, 통째로 붙여 넣고 싶다면 아래를 쓰세요.
+
+```yaml
+runway:
+  openbao:
+    secretEngine: "tutorial"      # 0-1 템플릿 ②의 '시크릿 엔진'
+    secretName: "llmchat"         # 0-1 템플릿 ②의 '시크릿 이름'
+
+  vector:
+    enabled: true
+    url: "http://qdrant.<프로젝트 ID>.svc.cluster.local:6333"
+    collection: "tutorial-docs"
+
+  storage:
+    enabled: true
+    existingClaim: "llm-tutorial-data"
+
+  embedding:
+    provider: "auto"              # 게이트웨이를 먼저 재보고 안 되면 앱에서 계산
+
+  access:
+    passwordRequired: false       # 5단계에서 켭니다
+
+  httpRoute:
+    enabled: false                # 5단계에서 켭니다
+```
+
+`<프로젝트 ID>` 한 곳만 내 값으로 바꾸면 됩니다. 이미지 주소와 태그는 차트에 이미
+들어 있으므로 여기 적지 않습니다.
+
+
 ### AI 모델 이름은 안 적어도 됩니다
 
 다른 안내에서는 모델 이름을 적으라고 할 수 있습니다. **이 챗봇은 안 적어도 됩니다.**
