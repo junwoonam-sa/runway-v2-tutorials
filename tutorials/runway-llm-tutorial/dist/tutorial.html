@@ -1642,7 +1642,7 @@ git push origin v0.1.0</code></pre></div>
 <div class="table-wrap"><table><thead><tr><th>나온 값</th><th>뜻</th><th>할 일</th></tr></thead><tbody><tr><td><code>200</code></td><td>익명으로 받아집니다</td><td>그대로 진행</td></tr><tr><td><code>401</code></td><td>아직 비공개입니다</td><td>Gitea → 저장소 → Settings에서 공개로 바꾸세요</td></tr><tr><td><code>404</code></td><td>이미지가 아직 없습니다</td><td>5)의 Actions가 성공했는지 확인</td></tr></tbody></table></div>
 <p><code>401</code> 인 채로 배포하면 파드가 <code>ImagePullBackOff</code> 로 멈춥니다. 메시지만 봐서는 원인이 잘 안 보이는 오류라, 여기서 미리 걸러 두는 편이 낫습니다.</p>
 <h3 id="bot-1-7-차트-올리기">7) 차트 올리기</h3>
-<p>이미지는 올렸지만 Runway가 읽는 것은 <strong>차트</strong>입니다. 저장소에 들어 있는 스크립트가 묶어서 올려 줍니다 — <strong>helm이 없어도 됩니다.</strong></p>
+<p>이미지는 올렸지만 Runway가 읽는 것은 <strong>차트</strong>입니다. 저장소에 들어 있는 스크립트가 묶어서 올려 줍니다. <strong>helm이 없어도 됩니다.</strong></p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>GITEA_HOST=gitea.&lt;도메인&gt; GITEA_USER=&lt;계정&gt; GITEA_OWNER=&lt;계정 또는 조직&gt;   bash scripts/package-chart.sh</code></pre></div>
 <p><code>GITEA_OWNER</code> 는 저장소를 만든 곳과 같습니다. 토큰을 물으면 붙여 넣으세요.</p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>앞에 <code>bash</code> 를 붙이는 이유.</strong> 브라우저로 끌어다 놓은 파일에는 실행 권한이 붙지 않습니다. 그냥 <code>scripts/package-chart.sh</code> 로 실행하면 <code>Permission denied</code> 가 납니다. <code>bash</code> 로 실행하면 권한과 무관하게 동작합니다 (<code>sudo</code> 는 도움이 되지 않습니다 — 오히려 경로를 못 찾습니다).</p></aside>
@@ -1660,10 +1660,11 @@ git push origin v0.1.0</code></pre></div>
 <hr />
 <h2 id="bot-1-helm-리포지토리-등록">Helm 리포지토리 등록</h2>
 <p><strong>Helm 리포지토리 URL</strong> 칸 오른쪽의 <strong>등록</strong> 버튼을 클릭합니다.</p>
-<p>템플릿 ②의 <strong><code>차트 리포지토리</code></strong> 줄을 그대로 붙여 넣고 <strong>저장</strong>을 누릅니다.</p>
-<div class="code block figure"><pre><code>&lt;여기에 받은 차트 리포지토리 주소&gt;</code></pre></div>
-<p>이 주소는 <strong>튜토리얼을 안내한 사람에게서 받습니다.</strong> 챗봇의 차트가 올라가 있는 곳이고, Runway는 이 주소로 차트 목록을 가져옵니다. 사내 Gitea에 직접 올려서 쓰는 경우라면 <a href="#app-a">부록 A</a>의 주소 형식을 보세요.</p>
-<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>등록이 하는 일</strong> 저장을 누르면 Runway가 그 주소에서 차트 목록을 가져옵니다. 그다음 <strong>차트</strong>와 <strong>차트 버전</strong> 드롭다운이 활성화됩니다.</p>
+<p><strong>7)에서 나온 주소</strong>를 그대로 붙여 넣고 <strong>저장</strong>을 누릅니다. 0-1 템플릿 ②의 <code>차트 리포지토리</code> 줄에 적어 둔 그 값입니다.</p>
+<div class="code block figure"><pre><code>https://gitea.&lt;도메인&gt;/api/packages/&lt;계정 또는 조직&gt;/helm</code></pre></div>
+<p>주소를 받아서 시작한 경우라면 받은 주소를 그대로 넣으면 됩니다.</p>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong>끝에 아무것도 붙이지 마세요.</strong> <code>/index.yaml</code> 이나 <code>/api/charts</code> 를 붙이면 등록이 실패합니다. 브라우저로 열었을 때 404가 나는 그 주소가 맞습니다.</p>
+<p><strong>등록이 하는 일</strong> 저장을 누르면 Runway가 그 주소에서 차트 목록을 가져옵니다. 그다음 <strong>차트</strong>와 <strong>차트 버전</strong> 드롭다운이 활성화됩니다.</p>
 <p><strong>이 주소를 브라우저로 열면 안내 문구만 나오는 것이 정상입니다.</strong> 사람이 볼 페이지가 아니라 프로그램이 읽는 목록입니다.</p></aside>
 <hr />
 <h2 id="bot-1-차트-고르기">차트 고르기</h2>

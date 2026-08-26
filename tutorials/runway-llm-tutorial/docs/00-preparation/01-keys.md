@@ -23,7 +23,7 @@ https://runway.mycompany.com
 | Runway 도메인 | 주소창의 `runway.` 뒤 | `mycompany.com` |
 | 프로젝트 ID | 프로젝트 목록에서 보이는 이름 | `my-project` |
 
-> **프로젝트 ID를 정확히 적으세요.** 2단계에서 문서 창고 주소를 만들 때, 3단계에서
+> **프로젝트 ID를 정확히 적으세요.** 2단계에서 Qdrant 주소를 만들 때, 3단계에서
 > 챗봇 설정을 채울 때 이 이름이 그대로 들어갑니다. 대소문자와 하이픈까지 그대로요.
 
 ---
@@ -109,7 +109,7 @@ Runway 도메인    : <your-runway-domain>
 시크릿 이름      : llmchat
 PVC 이름         : llm-tutorial-data
 Qdrant 앱 ID     : qdrant
-창고 주소        : http://qdrant.<your-project-id>.svc.cluster.local:6333
+Qdrant 주소      : http://qdrant.<your-project-id>.svc.cluster.local:6333
 
 차트 리포지토리  : https://<your-github-account>.github.io/runway-llm-tutorial
 ```
@@ -118,7 +118,7 @@ Qdrant 앱 ID     : qdrant
   확인한 값입니다.
 - 가운데 다섯 줄은 **기본값을 그대로 써도 됩니다.** 0-2부터 2-1까지 그 이름으로
   만들게 됩니다. 다른 이름을 쓰고 싶으면 여기서 바꿔 두고 계속 그 이름을 쓰세요.
-- `창고 주소` 의 `<your-project-id>` 는 위에서 채운 값과 같습니다.
+- `Qdrant 주소` 의 `<your-project-id>` 는 위에서 채운 값과 같습니다.
   2-1에서 다시 확인합니다.
 - `차트 리포지토리` 는 이 튜토리얼 저장소가 올라간 GitHub 계정 이름입니다.
   사내 Gitea를 쓴다면 [부록 A](../appendix/a-self-build.md)의 주소를 넣습니다.

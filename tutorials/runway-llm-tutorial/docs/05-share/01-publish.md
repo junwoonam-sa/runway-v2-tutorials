@@ -117,11 +117,11 @@ URL  : https://llm-chat-my-project.mycompany.com
 | 시크릿 이름 (`tutorial/llmchat`) | 키를 설정 밖에 보관 |
 | 볼륨 (`llm-tutorial-data`) | 챗봇의 저장 공간 |
 | Code Server | 확인용 작업 화면 |
-| Qdrant | 문서 창고 |
+| Qdrant | 벡터 DB |
 | 챗봇 (`llm-chat`) | 대화 + 문서 검색 |
 
 챗봇 안에는 **에이전트**와 **MCP 도구 서버**가 들어 있습니다. 질문을 보고 검색이
-필요한지 판단하는 것이 에이전트, 실제로 창고를 뒤지는 도구를 제공하는 것이 MCP
+필요한지 판단하는 것이 에이전트, 실제로 벡터 DB를 뒤지는 도구를 제공하는 것이 MCP
 서버입니다. 따로 설치하지 않았는데도 처음부터 돌고 있었습니다.
 
 ---
