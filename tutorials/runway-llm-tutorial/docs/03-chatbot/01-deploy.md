@@ -125,28 +125,66 @@ ls
 
 ### 3) 소스를 Gitea 저장소에 올리기
 
-**프로젝트 조직 밑에** 저장소를 하나 만듭니다. 개인 계정이 아닙니다 — 이유는 곧
-나옵니다.
+Gitea 화면 우측 상단 **+ → New Repository**. 세 칸만 봅니다.
 
-Gitea 화면 우측 상단 **+ → New Repository**. 소유자(Owner)를 **프로젝트 ID로 된
-조직**으로 고르고, 이름은 `llm-tutorial` 로 합니다.
+| 칸 | 넣을 값 |
+|---|---|
+| Owner | 내 계정 또는 프로젝트 조직 — **둘 다 됩니다** |
+| Repository Name | `llm-tutorial` |
+| Visibility | **Public** (공개) |
 
-그다음 방금 올린 폴더를 그 저장소로 보냅니다. Code Server 터미널에서
-`runway-llm-tutorial` 폴더 안에 있는지 먼저 확인하세요(`ls` 하면 `app` 이 보입니다).
+> **공개로 두는 이유.** 여기 올린 이미지를 나중에 챗봇이 받아 갑니다. 내 계정 밑에
+> 있는 비공개 이미지는 프로젝트가 읽지 못합니다 — 프로젝트가 쓰는 자격증명은 조직
+> 봇 계정 것이라 개인 계정 범위 밖이기 때문입니다. **공개로 두면 자격증명 자체가
+> 필요 없어서** 이 문제가 사라집니다. 프로젝트 조직 밑에 만들었다면 비공개여도
+> 됩니다.
+
+만든 뒤, Code Server 터미널에서 올립니다. `runway-llm-tutorial` 폴더 안에 있는지
+먼저 확인하세요 — `ls` 했을 때 `app` 이 보이면 맞습니다.
+
+**첫 번째로, 커밋할 사람 정보를 정합니다.** 이게 없으면 커밋이 아예 만들어지지
+않습니다.
+
+```bash
+git config --global user.email "내 이메일"
+git config --global user.name "내 이름"
+```
+
+**두 번째로, 커밋하고 주소를 연결합니다.**
 
 ```bash
 git init -b main
 git add -A
 git commit -m "튜토리얼 챗봇"
-git remote add origin https://gitea.<도메인>/<프로젝트 ID>/llm-tutorial.git
-git push -u origin main
+git branch -M main
+git remote add origin https://gitea.<도메인>/<계정 또는 조직>/llm-tutorial.git
 ```
 
-계정과 토큰을 물어보면 2)에서 만든 것을 넣으세요. 비밀번호 칸에 **토큰**을 붙여
-넣습니다.
+**세 번째로, 올립니다.** Code Server에서는 앞에 한 줄이 더 필요합니다.
+
+```bash
+unset GIT_ASKPASS VSCODE_GIT_ASKPASS_NODE VSCODE_GIT_ASKPASS_MAIN VSCODE_GIT_IPC_HANDLE
+git -c credential.helper= push -u origin main
+```
+
+계정과 비밀번호를 물어봅니다.
+
+| 물어보는 것 | 넣을 값 |
+|---|---|
+| `Username` | Gitea 계정 이름 |
+| `Password` | **2)에서 만든 토큰** — 계정 비밀번호가 아닙니다 |
+
+토큰을 붙여 넣어도 화면에는 아무것도 안 보입니다. 정상입니다. 그대로 엔터를 치세요.
+
+> ⚠ **`unset` 줄을 빼면 실패합니다.** Code Server는 편집기 화면에 로그인 창을 띄우는
+> 방식으로 자격증명을 받는데, 터미널에서는 그 창으로 갈 수 없습니다. 증상은
+> `Missing or invalid credentials` 와 `ECONNREFUSED /tmp/vscode-git-….sock` 입니다.
+> 저 줄이 그 방식을 꺼서, 터미널이 직접 묻게 만듭니다.
 
 > ⚠ **토큰을 주소에 끼워 넣지 마세요.** `https://<계정>:<토큰>@gitea...` 형태로 쓰면
 > 셸 기록과 `.git/config` 에 남고, Code Server의 홈은 재시작해도 남습니다.
+> 매번 묻는 것이 번거로우면 한 시간만 기억하게 할 수 있습니다 —
+> `git config --global credential.helper 'cache --timeout=3600'`.
 
 ### 4) 러너가 살아 있는지 먼저 확인하기
 
@@ -188,26 +226,51 @@ Actions 탭에서 진행을 볼 수 있습니다. 끝나면 로그 마지막에 
   tag:        0.1.0
 ```
 
-> ⚠ **이미지가 프로젝트 조직 밑에 있어야 합니다.** 워크플로는 저장소가 속한 조직에
-> 이미지를 올립니다. 그래서 3)에서 저장소를 개인 계정이 아니라 프로젝트 조직에
-> 만든 것입니다. 프로젝트가 이미지를 받아올 때 쓰는 자격증명은 **조직 봇 계정** 것이라
-> 조직 밖을 읽지 못하고, 개인 계정 밑에 있으면 파드가 `ImagePullBackOff` 로 멈춥니다.
+> **이미지는 저장소가 있는 곳에 올라갑니다.** 저장소를 내 계정에 만들었으면 이미지도
+> 내 계정 밑으로, 프로젝트 조직에 만들었으면 조직 밑으로 갑니다. 어느 쪽이든 되지만
+> **내 계정이라면 저장소가 공개여야 합니다** — 비공개면 프로젝트가 이미지를 읽지 못해
+> 파드가 `ImagePullBackOff` 로 멈춥니다. 6)에서 확인하는 방법이 나옵니다.
 
 > **같은 태그를 다시 쓰지 마세요.** 쿠버네티스는 이미 받아 둔 이미지를 다시 받지
 > 않습니다. 코드를 고쳤다면 `v0.1.1`, `v0.1.2` 로 올리세요.
 
 ### 6) 차트가 그 이미지를 가리키게 하기
 
-`chart/values.yaml` 에서 두 곳을 채웁니다.
+빌드 로그 마지막에 나온 두 값을 `chart/values.yaml` 에 적습니다.
 
 ```yaml
 image:
-  repository: "gitea.<도메인>/<프로젝트 ID>/llm-tutorial"
+  repository: "gitea.<도메인>/<계정 또는 조직>/llm-tutorial"
   tag: "0.1.0"
-
-imagePullSecrets:
-  - name: gitea-image-pull-secret-runway-bot-token
 ```
+
+그리고 **이미지를 어디에 올렸느냐에 따라** 아래 한 곳이 갈립니다.
+
+| 이미지를 올린 곳 | `imagePullSecrets` |
+|---|---|
+| 내 계정 (저장소가 **공개**) | `[]` — 비워 둡니다. 자격증명이 필요 없습니다 |
+| 프로젝트 조직 | `- name: gitea-image-pull-secret-runway-bot-token` |
+
+내 계정 + 공개인 경우:
+
+```yaml
+imagePullSecrets: []
+```
+
+**정말로 자격증명 없이 받아지는지 지금 확인해 두면** 배포 때 헤매지 않습니다.
+
+```bash
+curl -s -o /dev/null -w "%{http_code}" https://gitea.<도메인>/v2/<계정 또는 조직>/llm-tutorial/tags/list; echo
+```
+
+| 나온 값 | 뜻 | 할 일 |
+|---|---|---|
+| `200` | 익명으로 받아집니다 | 그대로 진행 |
+| `401` | 아직 비공개입니다 | Gitea → 저장소 → Settings에서 공개로 바꾸세요 |
+| `404` | 이미지가 아직 없습니다 | 5)의 Actions가 성공했는지 확인 |
+
+`401` 인 채로 배포하면 파드가 `ImagePullBackOff` 로 멈춥니다. 메시지만 봐서는
+원인이 잘 안 보이는 오류라, 여기서 미리 걸러 두는 편이 낫습니다.
 
 ### 7) 차트 올리기
 
