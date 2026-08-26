@@ -70,6 +70,7 @@
 | `src refspec main does not match any` | 커밋이 하나도 없음 (위 오류의 결과) | 위를 먼저 하고 `git add -A && git commit -m "…"` |
 | `Missing or invalid credentials` + `ECONNREFUSED …vscode-git.sock` | Code Server의 로그인 창을 터미널이 쓸 수 없음 | `unset GIT_ASKPASS VSCODE_GIT_ASKPASS_NODE VSCODE_GIT_ASKPASS_MAIN VSCODE_GIT_IPC_HANDLE` 뒤 `git -c credential.helper= push -u origin main` |
 | `Authentication failed` | Password 칸에 계정 비밀번호를 넣음 | 그 칸에는 **토큰**을 넣습니다 (3-1의 2단계) |
+| `Permission denied` (스크립트 실행 시) | 끌어다 놓은 파일에는 실행 권한이 없음 | 앞에 `bash` 를 붙여 실행하세요 — `bash scripts/package-chart.sh` |
 
 Actions 화면에서 (3-1의 4~5단계):
 

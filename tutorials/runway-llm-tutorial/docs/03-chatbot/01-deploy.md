@@ -319,10 +319,15 @@ curl -s -o /dev/null -w "%{http_code}" https://gitea.<도메인>/v2/<계정 또�
 묶어서 올려 줍니다 — **helm이 없어도 됩니다.**
 
 ```bash
-GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<계정 또는 조직>   scripts/package-chart.sh
+GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<계정 또는 조직>   bash scripts/package-chart.sh
 ```
 
 `GITEA_OWNER` 는 저장소를 만든 곳과 같습니다. 토큰을 물으면 붙여 넣으세요.
+
+> **앞에 `bash` 를 붙이는 이유.** 브라우저로 끌어다 놓은 파일에는 실행 권한이
+> 붙지 않습니다. 그냥 `scripts/package-chart.sh` 로 실행하면
+> `Permission denied` 가 납니다. `bash` 로 실행하면 권한과 무관하게 동작합니다
+> (`sudo` 는 도움이 되지 않습니다 — 오히려 경로를 못 찾습니다).
 
 끝나면 마지막 줄에 **등록할 주소**가 나옵니다.
 
