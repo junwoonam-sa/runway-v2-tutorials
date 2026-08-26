@@ -2,12 +2,13 @@
 
 문서를 읽고 답하는 챗봇을 배포합니다.
 
-튜토리얼에서는 **사전에 구성된 Helm 리포지토리를 등록하고 미리 게시된 컨테이너
-이미지를 사용**합니다. 직접 빌드해 보고 싶다면
-[부록 A. 자가 빌드](../appendix/a-self-build.md)를 참고하세요 — 본 흐름을 먼저
-끝내고 보는 편을 권합니다.
+챗봇 프로그램은 **미리 만들어져 있습니다.** 우리가 코드를 짜지 않습니다 — 만들어 둔
+것을 사내에 올려 두고, 그 주소를 Runway에 알려 주고, 내 값 몇 개를 채워 배포합니다.
 
-걸리는 시간 20분.
+**차트 리포지토리 주소를 이미 받았다면** 아래 [애플리케이션 만들기](#애플리케이션-만들기)로
+바로 가세요. 아직 없다면 다음 절부터 시작합니다.
+
+걸리는 시간 20분 (사내에 직접 올리는 경우 40분).
 
 ---
 
@@ -23,12 +24,110 @@ Runway 도메인    : mycompany.com
 시크릿 이름      : llmchat
 PVC 이름         : llm-tutorial-data
 Qdrant 앱 ID     : qdrant
-창고 주소        : http://qdrant.my-project.svc.cluster.local:6333
+Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
 
-차트 리포지토리  : https://myaccount.github.io/runway-llm-tutorial
+차트 리포지토리  : <받은 주소>
 ```
 
 아래 단계에서 이 값들을 폼과 YAML에 옮겨 적습니다.
+
+---
+
+## 코드를 받아 사내 Gitea에 올리기
+
+주소를 이미 받았다면 이 절은 건너뛰세요.
+
+챗봇의 이미지와 차트가 아직 어디에도 올라가 있지 않다면, 여기서 한 번 올립니다.
+**한 사람이 한 번만 하면 되고,** 그다음부터 팀원들은 그 주소만 받아서 씁니다.
+
+> ⚠ **도커가 설치된 컴퓨터가 한 대 필요합니다.** Code Server에는 도커가 없어서
+> 이미지 빌드는 거기서 되지 않습니다. 도커가 없다면 아래 **Gitea Actions로 빌드하기**를
+> 보세요.
+
+### 1) 코드 받기
+
+```bash
+git clone -b feature/runway-llm-tutorial   https://github.com/junwoonam-sa/runway-v2-tutorials.git
+cd runway-v2-tutorials/tutorials/runway-llm-tutorial
+```
+
+git을 쓰지 않는다면 GitHub 화면에서 **Code → Download ZIP** 으로 받아 풀어도 됩니다.
+
+### 2) Gitea에 로그인하고 토큰 만들기
+
+**콘솔 → Built-in Apps → Gitea** 카드로 들어갑니다. **이 경로로 들어가야 합니다** —
+프로젝트 조직은 SSO로 로그인하는 순간에 만들어져서, 한 번도 들어간 적이 없으면
+조직이 아예 안 보이고 404가 뜹니다.
+
+**프로필 → Settings → Applications → Generate Token.** 스코프 두 개를 켭니다.
+
+| 스코프 | 무엇에 필요한가 |
+|---|---|
+| `write:package` | 이미지와 차트 올리기 |
+| `write:repository` | 소스도 함께 올릴 때 |
+
+> ⚠ **`write:repository` 만으로는 실패합니다.** 이미지와 차트는 저장소가 아니라
+> **패키지 레지스트리**에 올라갑니다. 오류 메시지가 `authGroup.Verify` 처럼 나와서
+> 원인을 알기 어렵습니다.
+
+토큰은 한 번만 표시됩니다. 그리고 **주소에 끼워 넣지 마세요** — 셸 기록과
+`.git/config` 에 남습니다.
+
+### 3) 이미지 만들어 올리기
+
+도커가 있는 컴퓨터에서:
+
+```bash
+docker login gitea.<도메인>
+docker build -t gitea.<도메인>/<프로젝트 ID>/llm-tutorial:0.1.0 app/
+docker push gitea.<도메인>/<프로젝트 ID>/llm-tutorial:0.1.0
+```
+
+> ⚠ **이미지는 반드시 프로젝트 조직 밑에 올리세요.**
+> 프로젝트가 이미지를 받아올 때 쓰는 자격증명은 **조직 봇 계정** 것이라 조직 범위
+> 밖을 읽지 못합니다. 개인 계정(`gitea.<도메인>/<내계정>/...`) 밑에 올리면 파드가
+> `ImagePullBackOff` 로 멈춥니다.
+
+### 4) 차트가 그 이미지를 가리키게 하기
+
+`chart/values.yaml` 에서 두 곳을 채웁니다.
+
+```yaml
+image:
+  repository: "gitea.<도메인>/<프로젝트 ID>/llm-tutorial"
+  tag: "0.1.0"
+
+imagePullSecrets:
+  - name: gitea-image-pull-secret-runway-bot-token
+```
+
+### 5) 차트 올리기
+
+저장소에 들어 있는 스크립트가 묶어서 올려 줍니다. **helm이 없어도 됩니다.**
+
+```bash
+GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<프로젝트 ID>   scripts/package-chart.sh
+```
+
+토큰을 물으면 붙여 넣으세요. 끝나면 마지막 줄에 **등록할 주소**가 나옵니다.
+
+```
+https://gitea.<도메인>/api/packages/<프로젝트 ID>/helm
+```
+
+이 주소를 [0-1 템플릿 ②](../00-preparation/01-keys.md)의 `차트 리포지토리` 줄에
+적어 두세요. 바로 아래에서 씁니다.
+
+> **이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.** Helm 리포지토리는 사람이
+> 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 `index.yaml` 을 보여 주는데,
+> 거기 `entries:` 아래에 `llm-tutorial` 과 버전이 보이면 제대로 올라간 것입니다.
+
+### 도커가 없다면 — Gitea Actions로 빌드하기
+
+플랫폼에는 도커가 붙은 Gitea Actions 러너가 이미 깔려 있습니다. 소스를 Gitea
+저장소에 push하면 클러스터 안에서 이미지를 빌드하게 할 수 있습니다. 방법은
+[부록 A](../appendix/a-self-build.md)에 있습니다. 다만 러너가 실제로 도는지
+먼저 확인하세요 — 미러가 설정되지 않은 설치본에서는 작업이 큐에서 움직이지 않습니다.
 
 ---
 

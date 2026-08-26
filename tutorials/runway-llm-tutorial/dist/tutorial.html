@@ -607,7 +607,7 @@ html { scroll-behavior: smooth; }
     <span class="nav-marker">2-2</span>
     <span class="nav-label">Qdrant 연결 확인</span>
   </a>
-  <ul class="nav-subs"><li><a href="#vec-2-왜-지금-확인하나">왜 지금 확인하나</a></li><li><a href="#vec-2-확인하기">확인하기</a></li><li><a href="#vec-2-안-나온다면">안 나온다면</a></li><li><a href="#vec-2-여기까지-되면-성공">여기까지 되면 성공</a></li></ul>
+  <ul class="nav-subs"><li><a href="#vec-2-확인하기">확인하기</a></li><li><a href="#vec-2-안-나온다면">안 나온다면</a></li><li><a href="#vec-2-여기까지-되면-성공">여기까지 되면 성공</a></li></ul>
 </li><li class="nav-track"><span class="nav-track-name">3단계. 챗봇 배포</span></li>
 <li class="nav-chapter">
   <a class="nav-top" href="#bot-1">
@@ -1232,7 +1232,6 @@ URL  : https://code-my-project.mycompany.com</code></pre></div>
     <p class="chapter-blurb">OpenBao의 키가 실제로 오는지 눈으로</p>
   </header>
   <div class="prose"><p>0단계에서 OpenBao에 저장한 키가 <strong>실제로 전달되는지</strong> 눈으로 봅니다.</p>
-<p>걸리는 시간 5분 · 명령어 한 줄을 붙여 넣습니다.</p>
 <hr />
 <h2 id="dev-3-왜-이걸-확인하나">왜 이걸 확인하나</h2>
 <p>3단계에서 챗봇을 배포할 때, 챗봇도 <strong>똑같은 방식으로</strong> 키를 받아 갑니다. 지금 확인해 두면 나중에 챗봇이 안 될 때 &quot;키 문제인지 아닌지&quot;를 바로 가릴 수 있습니다.</p>
@@ -1260,7 +1259,7 @@ ACCESS_PASSWORD=긴문자열</code></pre></div>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>ls -l /vault/secrets/</code></pre></div>
 <hr />
 <h2 id="dev-3-볼륨도-확인하기-선택">볼륨도 확인하기 (선택)</h2>
-<p>1-1에서 만든 볼륨은 Code Server에 붙어 있지 않습니다 — 챗봇이 3단계에서 씁니다. 지금 확인할 것은 없고, 스토리지 목록에서 <code>Bound</code> 상태인 것만 보면 됩니다.</p>
+<p>1-1에서 만든 볼륨은 Code Server에 붙어 있지 않습니다. 챗봇이 3단계에서 씁니다. 지금 확인할 것은 없고, 스토리지 목록에서 <code>Bound</code> 상태인 것만 보면 됩니다.</p>
 <hr />
 <h2 id="dev-3-여기까지-되면-성공">여기까지 되면 성공</h2>
 <ul class="checklist"><li><span class="tick" aria-hidden="true"></span><span><code>cat /vault/secrets/llmchat.env</code> 가 <code>sk-</code> 로 시작하는 값을 보여 준다</span></li><li><span class="tick" aria-hidden="true"></span><span>스토리지 목록의 <code>llm-tutorial-data</code> 가 <code>Bound</code> 다</span></li></ul>
@@ -1404,7 +1403,8 @@ ACCESS_PASSWORD=긴문자열</code></pre></div>
     <p class="chapter-blurb">리포지토리 등록 → 차트 → values → 배포</p>
   </header>
   <div class="prose"><p>문서를 읽고 답하는 챗봇을 배포합니다.</p>
-<p>챗봇 프로그램은 <strong>미리 만들어져 있습니다.</strong> 우리가 코드를 짜거나 빌드하지 않습니다 — 만들어 둔 것이 어디에 있는지 그 주소를 Runway에 알려 주고, 내 값 몇 개를 채워 배포합니다. <strong>주소는 이 튜토리얼을 안내한 사람에게서 받습니다.</strong> 직접 만들어 보고 싶다면 <a href="#app-a">부록 A. 자가 빌드</a>를 참고하세요 — 본 흐름을 먼저 끝내고 보는 편을 권합니다.</p>
+<p>챗봇 프로그램은 <strong>미리 만들어져 있습니다.</strong> 우리가 코드를 짜지 않습니다 — 만들어 둔 것을 사내에 올려 두고, 그 주소를 Runway에 알려 주고, 내 값 몇 개를 채워 배포합니다.</p>
+<p><strong>차트 리포지토리 주소를 이미 받았다면</strong> 아래 <a href="#bot-1-애플리케이션-만들기">애플리케이션 만들기</a>로 바로 가세요. 아직 없다면 다음 절부터 시작합니다.</p>
 <hr />
 <h2 id="bot-1-시작하기-전에">시작하기 전에</h2>
 <p><a href="#prep-1">0-1의 템플릿 ②</a>가 이렇게 채워져 있어야 합니다.</p>
@@ -1419,6 +1419,45 @@ Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
 
 차트 리포지토리  : &lt;받은 주소&gt;</code></pre></div>
 <p>아래 단계에서 이 값들을 폼과 YAML에 옮겨 적습니다.</p>
+<hr />
+<hr />
+<h2 id="bot-1-코드를-받아-사내-gitea에-올리기">코드를 받아 사내 Gitea에 올리기</h2>
+<p>주소를 이미 받았다면 이 절은 건너뛰세요.</p>
+<p>챗봇의 이미지와 차트가 아직 어디에도 올라가 있지 않다면, 여기서 한 번 올립니다. <strong>한 사람이 한 번만 하면 되고,</strong> 그다음부터 팀원들은 그 주소만 받아서 씁니다.</p>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong>도커가 설치된 컴퓨터가 한 대 필요합니다.</strong> Code Server에는 도커가 없어서 이미지 빌드는 거기서 되지 않습니다. 도커가 없다면 아래 <strong>Gitea Actions로 빌드하기</strong>를 보세요.</p></aside>
+<h3 id="bot-1-1-코드-받기">1) 코드 받기</h3>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git clone -b feature/runway-llm-tutorial   https://github.com/junwoonam-sa/runway-v2-tutorials.git
+cd runway-v2-tutorials/tutorials/runway-llm-tutorial</code></pre></div>
+<p>git을 쓰지 않는다면 GitHub 화면에서 <strong>Code → Download ZIP</strong> 으로 받아 풀어도 됩니다.</p>
+<h3 id="bot-1-2-gitea에-로그인하고-토큰-만들기">2) Gitea에 로그인하고 토큰 만들기</h3>
+<p><strong>콘솔 → Built-in Apps → Gitea</strong> 카드로 들어갑니다. <strong>이 경로로 들어가야 합니다</strong> — 프로젝트 조직은 SSO로 로그인하는 순간에 만들어져서, 한 번도 들어간 적이 없으면 조직이 아예 안 보이고 404가 뜹니다.</p>
+<p><strong>프로필 → Settings → Applications → Generate Token.</strong> 스코프 두 개를 켭니다.</p>
+<div class="table-wrap"><table><thead><tr><th>스코프</th><th>무엇에 필요한가</th></tr></thead><tbody><tr><td><code>write:package</code></td><td>이미지와 차트 올리기</td></tr><tr><td><code>write:repository</code></td><td>소스도 함께 올릴 때</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong><code>write:repository</code> 만으로는 실패합니다.</strong> 이미지와 차트는 저장소가 아니라 <strong>패키지 레지스트리</strong>에 올라갑니다. 오류 메시지가 <code>authGroup.Verify</code> 처럼 나와서 원인을 알기 어렵습니다.</p></aside>
+<p>토큰은 한 번만 표시됩니다. 그리고 <strong>주소에 끼워 넣지 마세요</strong> — 셸 기록과 <code>.git/config</code> 에 남습니다.</p>
+<h3 id="bot-1-3-이미지-만들어-올리기">3) 이미지 만들어 올리기</h3>
+<p>도커가 있는 컴퓨터에서:</p>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>docker login gitea.&lt;도메인&gt;
+docker build -t gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial:0.1.0 app/
+docker push gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial:0.1.0</code></pre></div>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong>이미지는 반드시 프로젝트 조직 밑에 올리세요.</strong> 프로젝트가 이미지를 받아올 때 쓰는 자격증명은 <strong>조직 봇 계정</strong> 것이라 조직 범위 밖을 읽지 못합니다. 개인 계정(<code>gitea.&lt;도메인&gt;/&lt;내계정&gt;/...</code>) 밑에 올리면 파드가 <code>ImagePullBackOff</code> 로 멈춥니다.</p></aside>
+<h3 id="bot-1-4-차트가-그-이미지를-가리키게-하기">4) 차트가 그 이미지를 가리키게 하기</h3>
+<p><code>chart/values.yaml</code> 에서 두 곳을 채웁니다.</p>
+<div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>image:
+  repository: &quot;gitea.&lt;도메인&gt;/&lt;프로젝트 ID&gt;/llm-tutorial&quot;
+  tag: &quot;0.1.0&quot;
+
+imagePullSecrets:
+  - name: gitea-image-pull-secret-runway-bot-token</code></pre></div>
+<h3 id="bot-1-5-차트-올리기">5) 차트 올리기</h3>
+<p>저장소에 들어 있는 스크립트가 묶어서 올려 줍니다. <strong>helm이 없어도 됩니다.</strong></p>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>GITEA_HOST=gitea.&lt;도메인&gt; GITEA_USER=&lt;계정&gt; GITEA_OWNER=&lt;프로젝트 ID&gt;   scripts/package-chart.sh</code></pre></div>
+<p>토큰을 물으면 붙여 넣으세요. 끝나면 마지막 줄에 <strong>등록할 주소</strong>가 나옵니다.</p>
+<div class="code block figure"><pre><code>https://gitea.&lt;도메인&gt;/api/packages/&lt;프로젝트 ID&gt;/helm</code></pre></div>
+<p>이 주소를 <a href="#prep-1">0-1 템플릿 ②</a>의 <code>차트 리포지토리</code> 줄에 적어 두세요. 바로 아래에서 씁니다.</p>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.</strong> Helm 리포지토리는 사람이 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 <code>index.yaml</code> 을 보여 주는데, 거기 <code>entries:</code> 아래에 <code>llm-tutorial</code> 과 버전이 보이면 제대로 올라간 것입니다.</p></aside>
+<h3 id="bot-1-도커가-없다면-gitea-actions로-빌드하기">도커가 없다면 — Gitea Actions로 빌드하기</h3>
+<p>플랫폼에는 도커가 붙은 Gitea Actions 러너가 이미 깔려 있습니다. 소스를 Gitea 저장소에 push하면 클러스터 안에서 이미지를 빌드하게 할 수 있습니다. 방법은 <a href="#app-a">부록 A</a>에 있습니다. 다만 러너가 실제로 도는지 먼저 확인하세요 — 미러가 설정되지 않은 설치본에서는 작업이 큐에서 움직이지 않습니다.</p>
 <hr />
 <h2 id="bot-1-애플리케이션-만들기">애플리케이션 만들기</h2>
 <p><strong>애플리케이션(Applications)</strong> → 우측 상단 <strong>+ 생성</strong>.</p>
