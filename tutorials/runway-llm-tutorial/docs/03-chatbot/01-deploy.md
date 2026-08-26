@@ -36,6 +36,7 @@ Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
 ## 코드를 받아 사내 Gitea에 올리기
 
 주소를 이미 받았다면 [이 절은 건너뛰세요](01-deploy.md#애플리케이션-만들기).
+챗봇의 코드는 [이 저장소](https://github.com/junwoonam-sa/runway-v2-tutorials/tree/feature/runway-llm-tutorial)에 있습니다.
 
 챗봇의 이미지와 차트가 아직 어디에도 올라가 있지 않다면, 여기서 한 번 올립니다.
 **한 사람이 한 번만 하면 되고,** 그다음부터 팀원들은 그 주소만 받아서 씁니다.
@@ -46,14 +47,36 @@ Code Server에도 도커 데몬이 없고, 대신 플랫폼이 도커가 붙은 
 
 브라우저와 Code Server 터미널만 있으면 됩니다.
 
-### 1) 코드 받기
+### 1) 코드 내려받기
 
-```bash
-git clone -b feature/runway-llm-tutorial https://github.com/junwoonam-sa/runway-v2-tutorials.git
-cd runway-v2-tutorials/tutorials/runway-llm-tutorial
+명령어를 쓰지 않고 **파일로 받습니다.**
+
+1. [저장소 페이지](https://github.com/junwoonam-sa/runway-v2-tutorials/tree/feature/runway-llm-tutorial)를 엽니다
+2. 초록색 **Code** 버튼 → **Download ZIP**
+
+아래 주소를 브라우저 주소창에 넣어도 바로 받아집니다.
+
+```
+https://github.com/junwoonam-sa/runway-v2-tutorials/archive/refs/heads/feature/runway-llm-tutorial.zip
 ```
 
-git을 쓰지 않는다면 GitHub 화면에서 **Code → Download ZIP** 으로 받아 풀어도 됩니다.
+받은 zip 파일을 **Code Server로 옮깁니다.** 1-2에서 만든 Code Server 화면을 열고,
+왼쪽 파일 목록의 빈 곳에 파일을 **끌어다 놓으면** 올라갑니다.
+
+그다음 터미널에서 압축을 풉니다 (**Terminal → New Terminal**).
+
+```bash
+unzip runway-v2-tutorials-feature-runway-llm-tutorial.zip
+cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial
+```
+
+> `unzip: command not found` 가 나오면 아래로 대신 푸세요.
+>
+> ```bash
+> python3 -m zipfile -e runway-v2-tutorials-feature-runway-llm-tutorial.zip .
+> ```
+
+여기서부터 나오는 명령은 전부 **이 폴더 안에서** 실행합니다.
 
 ### 2) Gitea에 로그인하고 토큰 만들기
 
@@ -83,10 +106,10 @@ git을 쓰지 않는다면 GitHub 화면에서 **Code → Download ZIP** 으로 
 Gitea 화면 우측 상단 **+ → New Repository**. 소유자(Owner)를 **프로젝트 ID로 된
 조직**으로 고르고, 이름은 `llm-tutorial` 로 합니다.
 
-그다음 1)에서 받은 폴더를 그 저장소로 올립니다. Code Server 터미널에서:
+그다음 1)에서 푼 폴더를 그 저장소로 올립니다. Code Server 터미널에서 (1)의 마지막
+`cd` 를 한 상태여야 합니다):
 
 ```bash
-cd runway-v2-tutorials/tutorials/runway-llm-tutorial
 git init -b main
 git add -A
 git commit -m "튜토리얼 챗봇"
