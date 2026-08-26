@@ -224,42 +224,32 @@ workflow** 를 눌러 한 번 돌려 보세요.
 | `Waiting for runner…` 에서 멈춤 | 러너가 자기 이미지를 받지 못함 | 폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요 |
 | Actions 탭 자체가 없음 | 저장소에서 Actions가 꺼져 있음 | Settings → Repository → Actions 켜기 |
 
-### 이미지를 만들기 전에 — 임베딩을 어디서 계산할지
+### 임베딩은 기본으로 들어 있습니다
 
-문서를 검색하려면 문장을 숫자(벡터)로 바꾸는 계산이 필요합니다. 두 곳 중 하나에서
-합니다. **이 선택은 이미지를 만들기 전에 해야 합니다** — 앱 안에서 계산하려면 그
-라이브러리가 이미지에 들어 있어야 하기 때문입니다.
+문서를 검색하려면 문장을 숫자(벡터)로 바꾸는 계산이 필요합니다. 이 저장소의
+이미지는 **앱 안에서 계산하도록** 만들어져 있어서, 따로 할 일이 없습니다.
+게이트웨이에 임베딩 모델이 없는 설치본이 많기 때문에 그쪽을 기본으로 뒀습니다.
 
-Code Server 터미널에서 게이트웨이에 무엇이 있는지 물어봅니다.
+계산은 CPU로 합니다 — GPU가 필요 없습니다. 첫 문서를 올릴 때 모델을 한 번
+내려받아 볼륨에 저장하고, 그다음부터는 그것을 씁니다.
 
-```bash
-source /vault/secrets/llmchat.env
-curl -s -H "Authorization: Bearer $LLM_API_KEY" http://litellm.runway-applications.svc.cluster.local:4000/v1/models
-```
+> **게이트웨이에 임베딩 모델이 있다면** 이미지를 가볍게 할 수 있습니다. 먼저
+> 확인해 보세요.
+>
+> ```bash
+> source /vault/secrets/llmchat.env
+> curl -s -H "Authorization: Bearer $LLM_API_KEY" http://litellm.runway-applications.svc.cluster.local:4000/v1/models
+> ```
+>
+> 목록에 `bge`·`e5`·`embedding` 같은 이름이 있으면, `app/Dockerfile` 에서
+> `requirements-local-embeddings` 관련 세 줄을 지우고 values에서
+> `embedding.provider: "gateway"` 와 `gatewayModel` 을 적으면 됩니다.
+> 그러면 이미지가 훨씬 작아집니다.
 
-| 목록에 `bge`·`e5`·`embedding` 같은 이름이 | 어떻게 |
-|---|---|
-| **있다** | 이미지는 그대로 두고, 나중에 values에서 `provider: gateway` 와 그 모델 이름만 적으면 됩니다 |
-| **없다** | 아래처럼 이미지에 계산 기능을 넣어야 합니다 |
-
-없을 때는 `app/Dockerfile` 에서 주석 세 줄을 풉니다.
-
-```dockerfile
-COPY requirements-local-embeddings.txt ./
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir -r requirements-local-embeddings.txt
-```
-
-> **CPU 전용 torch를 먼저 까는 것이 중요합니다.** 그냥 설치하면 GPU용 빌드가 딸려
-> 와서 이미지가 몇 배로 커집니다. 이 튜토리얼은 GPU를 쓰지 않으므로 전부 낭비입니다.
-> 계산은 CPU로 충분합니다 — 쓰는 모델이 작습니다.
-
-> **첫 실행 때 모델 가중치를 내려받습니다.** 그래서 볼륨(1-1에서 만든 것)이 필요하고,
-> 클러스터가 `huggingface.co` 에 나갈 수 있어야 합니다. 확인하려면
-> `curl -sI -m 10 https://huggingface.co | head -1`. 못 나가면 플랫폼 담당자에게
-> 게이트웨이에 임베딩 모델을 등록해 달라고 요청하는 편이 빠릅니다.
-
-로컬 계산을 쓰면 메모리도 조금 더 필요합니다. 6)에서 values를 채울 때 함께 올립니다.
+> **첫 실행에 `huggingface.co` 접근이 필요합니다.** 모델 가중치를 거기서 받습니다.
+> 폐쇄망이면 받지 못하므로, 플랫폼 담당자에게 게이트웨이에 임베딩 모델을 등록해
+> 달라고 요청하는 편이 빠릅니다. 확인:
+> `curl -sI -m 10 https://huggingface.co | head -1`
 
 ### 5) 등록해 두기 — 값 세 개
 
@@ -534,23 +524,12 @@ affinity: {}
 > 씁니다. 앞에 적은 값이 오류 없이 무시되고, 증상은 "설정했는데 동작하지 않는다"로
 > 나타납니다.
 
-> **앱 안에서 임베딩을 계산하기로 했다면**(위 「이미지를 만들기 전에」 참고) 두 곳을
-> 더 고칩니다.
+> **`provider: "auto"` 를 그대로 두면 됩니다.** 게이트웨이에 임베딩 모델이 있으면
+> 그쪽을 쓰고, 없으면 앱에서 계산합니다. 어느 쪽을 골랐는지는 상태 화면의 임베딩
+> 항목에 표시됩니다.
 >
-> ```yaml
-> runway:
->   embedding:
->     provider: "local"
->     cachePath: /data/embedding-cache
->
-> resources:
->   limits:
->     cpu: "1"
->     memory: 2Gi          # 기본 1Gi로는 빠듯합니다
-> ```
->
-> 볼륨(`storage.enabled`)은 이미 켜져 있어야 합니다 — 첫 실행에서 받은 모델
-> 가중치를 거기에 두고, 그래야 파드가 재시작해도 다시 받지 않습니다.
+> 볼륨(`storage.enabled: true`)은 켜 두세요. 앱에서 계산할 때 받은 모델 가중치를
+> 거기에 저장하고, 그래야 파드가 재시작해도 다시 받지 않습니다.
 
 ### AI 모델 이름은 안 적어도 됩니다
 

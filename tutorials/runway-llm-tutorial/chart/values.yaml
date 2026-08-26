@@ -186,11 +186,12 @@ containerPort: 8000
 # (모델은 다른 데서 돕니다). 로컬 임베딩을 켜면 메모리를 크게 올려야 합니다.
 resources:
   requests:
-    cpu: 100m
-    memory: 256Mi
+    cpu: 200m
+    memory: 512Mi
   limits:
     cpu: "1"
-    memory: 1Gi
+    # 임베딩을 앱에서 계산하면(기본) 모델이 메모리에 올라갑니다. 1Gi로는 빠듯합니다.
+    memory: 2Gi
 
 podSecurityContext:
   runAsNonRoot: true

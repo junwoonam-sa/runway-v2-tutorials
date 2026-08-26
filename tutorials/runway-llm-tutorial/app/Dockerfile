@@ -27,19 +27,24 @@ WORKDIR /srv
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 게이트웨이에 임베딩 모델이 없으면 앱 안에서 계산해야 합니다. 그때 아래 세 줄의
-# 주석을 푸세요.
+# 임베딩 — 문장을 벡터로 바꾸는 계산입니다. 문서 검색에 필요합니다.
+#
+# 기본으로 **앱 안에서 계산**하도록 넣어 둡니다. 게이트웨이(LiteLLM)에 임베딩
+# 모델이 등록되어 있지 않은 설치본이 많고, 그 경우 이 라이브러리가 없으면 문서
+# 기능이 통째로 동작하지 않기 때문입니다.
 #
 # torch를 CPU 전용 저장소에서 먼저 설치하는 것이 중요합니다. 그냥 설치하면 PyPI가
-# CUDA 빌드를 주고, nvidia-* 패키지들이 딸려 와 이미지가 몇 배로 커집니다. 이
+# CUDA 빌드를 주고 nvidia-* 패키지들이 딸려 와 이미지가 몇 배로 커집니다. 이
 # 튜토리얼은 GPU를 쓰지 않으므로 전부 낭비입니다. torch가 이미 있으면
 # sentence-transformers 는 그것을 그대로 씁니다.
 #
-# 폐쇄망이라 download.pytorch.org 에 못 나가면, 사내 미러에 CPU 휠이 있는지
-# 확인하고 --index-url 을 그쪽으로 바꾸세요.
-# COPY requirements-local-embeddings.txt ./
-# RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-# RUN pip install --no-cache-dir -r requirements-local-embeddings.txt
+# 게이트웨이에 임베딩 모델이 있다면 아래 세 줄을 지워 이미지를 가볍게 하세요.
+# 확인: curl -H "Authorization: Bearer $LLM_API_KEY" <baseUrl>/models
+#
+# 폐쇄망이라 download.pytorch.org 에 못 나가면 --index-url 을 사내 미러로 바꾸세요.
+COPY requirements-local-embeddings.txt ./
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -r requirements-local-embeddings.txt
 
 COPY chatbot/ ./chatbot/
 COPY mcp_server/ ./mcp_server/
