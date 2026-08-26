@@ -27,9 +27,18 @@ WORKDIR /srv
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 로컬 임베딩까지 쓰려면 아래 두 줄의 주석을 푸세요. torch가 딸려 와 이미지가 1.5 GB
-# 넘게 커집니다 — 게이트웨이에 임베딩 모델이 있으면 그대로 두는 편이 낫습니다.
+# 게이트웨이에 임베딩 모델이 없으면 앱 안에서 계산해야 합니다. 그때 아래 세 줄의
+# 주석을 푸세요.
+#
+# torch를 CPU 전용 저장소에서 먼저 설치하는 것이 중요합니다. 그냥 설치하면 PyPI가
+# CUDA 빌드를 주고, nvidia-* 패키지들이 딸려 와 이미지가 몇 배로 커집니다. 이
+# 튜토리얼은 GPU를 쓰지 않으므로 전부 낭비입니다. torch가 이미 있으면
+# sentence-transformers 는 그것을 그대로 씁니다.
+#
+# 폐쇄망이라 download.pytorch.org 에 못 나가면, 사내 미러에 CPU 휠이 있는지
+# 확인하고 --index-url 을 그쪽으로 바꾸세요.
 # COPY requirements-local-embeddings.txt ./
+# RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 # RUN pip install --no-cache-dir -r requirements-local-embeddings.txt
 
 COPY chatbot/ ./chatbot/

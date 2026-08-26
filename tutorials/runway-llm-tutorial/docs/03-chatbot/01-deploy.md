@@ -224,6 +224,43 @@ workflow** 를 눌러 한 번 돌려 보세요.
 | `Waiting for runner…` 에서 멈춤 | 러너가 자기 이미지를 받지 못함 | 폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요 |
 | Actions 탭 자체가 없음 | 저장소에서 Actions가 꺼져 있음 | Settings → Repository → Actions 켜기 |
 
+### 이미지를 만들기 전에 — 임베딩을 어디서 계산할지
+
+문서를 검색하려면 문장을 숫자(벡터)로 바꾸는 계산이 필요합니다. 두 곳 중 하나에서
+합니다. **이 선택은 이미지를 만들기 전에 해야 합니다** — 앱 안에서 계산하려면 그
+라이브러리가 이미지에 들어 있어야 하기 때문입니다.
+
+Code Server 터미널에서 게이트웨이에 무엇이 있는지 물어봅니다.
+
+```bash
+source /vault/secrets/llmchat.env
+curl -s -H "Authorization: Bearer $LLM_API_KEY" http://litellm.runway-applications.svc.cluster.local:4000/v1/models
+```
+
+| 목록에 `bge`·`e5`·`embedding` 같은 이름이 | 어떻게 |
+|---|---|
+| **있다** | 이미지는 그대로 두고, 나중에 values에서 `provider: gateway` 와 그 모델 이름만 적으면 됩니다 |
+| **없다** | 아래처럼 이미지에 계산 기능을 넣어야 합니다 |
+
+없을 때는 `app/Dockerfile` 에서 주석 세 줄을 풉니다.
+
+```dockerfile
+COPY requirements-local-embeddings.txt ./
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -r requirements-local-embeddings.txt
+```
+
+> **CPU 전용 torch를 먼저 까는 것이 중요합니다.** 그냥 설치하면 GPU용 빌드가 딸려
+> 와서 이미지가 몇 배로 커집니다. 이 튜토리얼은 GPU를 쓰지 않으므로 전부 낭비입니다.
+> 계산은 CPU로 충분합니다 — 쓰는 모델이 작습니다.
+
+> **첫 실행 때 모델 가중치를 내려받습니다.** 그래서 볼륨(1-1에서 만든 것)이 필요하고,
+> 클러스터가 `huggingface.co` 에 나갈 수 있어야 합니다. 확인하려면
+> `curl -sI -m 10 https://huggingface.co | head -1`. 못 나가면 플랫폼 담당자에게
+> 게이트웨이에 임베딩 모델을 등록해 달라고 요청하는 편이 빠릅니다.
+
+로컬 계산을 쓰면 메모리도 조금 더 필요합니다. 6)에서 values를 채울 때 함께 올립니다.
+
 ### 5) 이미지 빌드해서 올리기
 
 먼저 **저장소에 두 가지를 등록합니다.** 빌드가 레지스트리에 로그인할 때 씁니다.
@@ -300,6 +337,26 @@ imagePullSecrets:
 ```
 
 이 이름의 시크릿은 프로젝트에 이미 만들어져 있습니다 — 우리가 만들 것이 없습니다.
+
+**앱 안에서 임베딩을 계산하기로 했다면** 세 곳을 더 맞춥니다.
+
+```yaml
+runway:
+  embedding:
+    provider: "local"
+    cachePath: /data/embedding-cache   # 볼륨 위에 둡니다
+  storage:
+    enabled: true
+    existingClaim: "llm-tutorial-data"
+
+resources:
+  limits:
+    cpu: "1"
+    memory: 2Gi                        # 기본 1Gi로는 빠듯합니다
+```
+
+볼륨이 없으면 차트가 렌더 단계에서 거부합니다 — 파드가 재시작할 때마다 모델을
+다시 받게 되기 때문입니다.
 
 > 이미지를 **내 계정** 밑에 두었다면 이 봇 자격증명으로는 읽지 못합니다. 그때는
 > 패키지를 공개로 만들고 `imagePullSecrets: []` 로 비워야 합니다. 다만 Gitea에서
