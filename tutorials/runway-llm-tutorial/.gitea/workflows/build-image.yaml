@@ -7,7 +7,12 @@
 #
 # 쓰기 전에 한 번만 해 둘 것 — 저장소 Settings → Actions 에서 둘을 등록합니다.
 #   Variables → REGISTRY_HOST : gitea.<도메인>      (예: gitea.try.mrxrunway.ai)
+#   Variables → REGISTRY_OWNER: 프로젝트 ID          (이미지를 올릴 곳. 아래 설명)
 #   Secrets   → REGISTRY_TOKEN: Gitea 개인 액세스 토큰 (package 권한이 Write)
+#
+#   REGISTRY_OWNER 를 프로젝트 조직으로 두는 이유: 파드가 이미지를 받아올 때 쓰는
+#   자격증명은 조직 봇 계정 것이라 개인 계정 밑의 이미지를 읽지 못합니다. 저장소
+#   자체는 개인 계정에 있어도 됩니다.
 #
 #   REGISTRY_HOST 를 따로 받는 이유: 워크플로 안에서 얻을 수 있는 서버 주소는
 #   클러스터 내부용(http://gitea-http:3000)이라 평문 HTTP입니다. docker가 거부하고
@@ -64,9 +69,19 @@ jobs:
       - name: 주소와 태그 정하기
         id: meta
         run: |
-          # 이미지는 이 저장소가 있는 곳(계정 또는 조직) 밑으로 갑니다.
-          # 개인 계정에 올린다면 저장소를 공개로 두어야 파드가 이미지를 받을 수 있습니다.
-          OWNER="${GITHUB_REPOSITORY%%/*}"
+          # 이미지를 올릴 곳. REGISTRY_OWNER 를 정해 두었으면 그쪽으로, 아니면
+          # 이 저장소가 있는 곳으로 갑니다.
+          #
+          # 프로젝트 조직 이름을 넣는 것을 권합니다. 파드가 이미지를 받아올 때 쓰는
+          # 자격증명이 조직 봇 계정 것이라, 개인 계정 밑에 있는 이미지는 읽지 못하고
+          # ImagePullBackOff 가 납니다. 소스와 차트는 개인 계정에 둬도 됩니다 —
+          # 그 둘은 사람과 Argo CD가 각자 자기 자격증명으로 읽기 때문입니다.
+          OWNER="${{ vars.REGISTRY_OWNER }}"
+          if [ -z "$OWNER" ]; then
+            OWNER="${GITHUB_REPOSITORY%%/*}"
+            echo "REGISTRY_OWNER 변수가 없어 저장소가 있는 곳(${OWNER})에 올립니다."
+            echo "파드가 이미지를 못 받으면 이 변수에 프로젝트 ID를 넣으세요."
+          fi
           echo "image=${{ vars.REGISTRY_HOST }}/${OWNER}/llm-tutorial" >> "$GITHUB_OUTPUT"
 
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then

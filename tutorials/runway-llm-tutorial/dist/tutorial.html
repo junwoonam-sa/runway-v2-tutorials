@@ -1614,9 +1614,10 @@ git -c credential.helper= push -u origin main</code></pre></div>
 <h3 id="bot-1-5-이미지-빌드해서-올리기">5) 이미지 빌드해서 올리기</h3>
 <p>먼저 <strong>저장소에 두 가지를 등록합니다.</strong> 빌드가 레지스트리에 로그인할 때 씁니다.</p>
 <p><strong>저장소 → Settings → Actions</strong> 로 가서, 두 곳에 하나씩 넣습니다.</p>
-<div class="table-wrap"><table><thead><tr><th>어디</th><th>Name</th><th>Value</th></tr></thead><tbody><tr><td><strong>Variables</strong> → Add Variable</td><td><code>REGISTRY_HOST</code></td><td><code>gitea.&lt;도메인&gt;</code> 주소창에 보이는 Gitea 주소에서 <code>https://</code> 를 뗀 것</td></tr><tr><td><strong>Secrets</strong> → Add Secret</td><td><code>REGISTRY_TOKEN</code></td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
-<p>예를 들어 Gitea 주소가 <code>https://gitea.mycompany.com</code> 이라면 <code>REGISTRY_HOST</code> 는 <code>gitea.mycompany.com</code> 입니다. 앞에 <code>https://</code> 를 붙이면 안 됩니다.</p>
-<aside class="callout warn"><p class="callout-label">주의</p><p><strong>사용자 Settings가 아니라 저장소 Settings 입니다.</strong> 두 곳 모두 Actions 메뉴가 있어서 헷갈립니다. 빠뜨리면 빌드가 이렇게 멈춥니다.</p>
+<div class="table-wrap"><table><thead><tr><th>어디</th><th>Name</th><th>Value</th></tr></thead><tbody><tr><td><strong>Variables</strong> → Add Variable</td><td><code>REGISTRY_HOST</code></td><td><code>gitea.&lt;도메인&gt;</code> — 주소창에 보이는 Gitea 주소에서 <code>https://</code> 를 뗀 것</td></tr><tr><td><strong>Variables</strong> → Add Variable</td><td><code>REGISTRY_OWNER</code></td><td><strong>프로젝트 ID</strong> — 이미지를 올릴 곳</td></tr><tr><td><strong>Secrets</strong> → Add Secret</td><td><code>REGISTRY_TOKEN</code></td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
+<p>예를 들어 Gitea 주소가 <code>https://gitea.mycompany.com</code> 이고 프로젝트가 <code>my-project</code> 라면 <code>REGISTRY_HOST</code> 는 <code>gitea.mycompany.com</code>, <code>REGISTRY_OWNER</code> 는 <code>my-project</code> 입니다. 앞에 <code>https://</code> 를 붙이면 안 됩니다.</p>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>왜 이미지만 프로젝트 조직으로 보내나.</strong> 저장소를 내 계정에 만들어도 됩니다. 소스는 사람이 읽고, 차트는 Argo CD가 <strong>내 자격증명</strong>으로 읽기 때문입니다. 그런데 <strong>이미지는 노드가 프로젝트의 봇 자격증명으로 받아 갑니다.</strong> 그 봇은 조직 범위만 읽을 수 있어서, 내 계정 밑에 있는 이미지는 못 읽고 파드가 <code>ImagePullBackOff</code> 로 멈춥니다. 그래서 이미지가 갈 곳만 따로 정해 줍니다.</p>
+<p>⚠ <strong>사용자 Settings가 아니라 저장소 Settings 입니다.</strong> 두 곳 모두 Actions 메뉴가 있어서 헷갈립니다. 빠뜨리면 빌드가 이렇게 멈춥니다.</p>
 <div class="table-wrap"><table><thead><tr><th>빠진 것</th><th>나오는 메시지</th></tr></thead><tbody><tr><td><code>REGISTRY_TOKEN</code></td><td><code>password is empty</code></td></tr><tr><td><code>REGISTRY_HOST</code></td><td><code>server gave HTTP response to HTTPS client</code></td></tr></tbody></table></div>
 <p>두 번째는 주소를 안 알려 주면 빌드가 <strong>클러스터 내부 주소</strong>를 쓰기 때문입니다. 그 주소는 평문이라 docker가 거부하고, 설령 올라가도 나중에 파드가 그 이름으로는 이미지를 받지 못합니다.</p></aside>
 <p>그다음 태그를 밀면 빌드가 시작됩니다.</p>
@@ -1633,10 +1634,11 @@ git push origin v0.1.0</code></pre></div>
 <div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>image:
   repository: &quot;gitea.&lt;도메인&gt;/&lt;계정 또는 조직&gt;/llm-tutorial&quot;
   tag: &quot;0.1.0&quot;</code></pre></div>
-<p>그리고 <strong>이미지를 어디에 올렸느냐에 따라</strong> 아래 한 곳이 갈립니다.</p>
-<div class="table-wrap"><table><thead><tr><th>이미지를 올린 곳</th><th><code>imagePullSecrets</code></th></tr></thead><tbody><tr><td>내 계정 (저장소가 <strong>공개</strong>)</td><td><code>[]</code> 비워 둡니다. 자격증명이 필요 없습니다</td></tr><tr><td>프로젝트 조직</td><td><code>- name: gitea-image-pull-secret-runway-bot-token</code></td></tr></tbody></table></div>
-<p>내 계정 + 공개인 경우:</p>
-<div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>imagePullSecrets: []</code></pre></div>
+<p>그리고 이미지를 받아올 자격증명을 지정합니다. 5)에서 <code>REGISTRY_OWNER</code> 에 프로젝트 ID를 넣었다면 이쪽입니다.</p>
+<div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>imagePullSecrets:
+  - name: gitea-image-pull-secret-runway-bot-token</code></pre></div>
+<p>이 이름의 시크릿은 프로젝트에 이미 만들어져 있습니다 — 우리가 만들 것이 없습니다.</p>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p>이미지를 <strong>내 계정</strong> 밑에 두었다면 이 봇 자격증명으로는 읽지 못합니다. 그때는 패키지를 공개로 만들고 <code>imagePullSecrets: []</code> 로 비워야 합니다. 다만 Gitea에서 패키지 공개 여부는 저장소가 아니라 <strong>계정 설정</strong>을 따라가서 손이 더 갑니다. 프로젝트 조직에 올리는 편이 단순합니다.</p></aside>
 <p><strong>정말로 자격증명 없이 받아지는지 지금 확인해 두면</strong> 배포 때 헤매지 않습니다.</p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>curl -s -o /dev/null -w &quot;%{http_code}&quot; https://gitea.&lt;도메인&gt;/v2/&lt;계정 또는 조직&gt;/llm-tutorial/tags/list; echo</code></pre></div>
 <div class="table-wrap"><table><thead><tr><th>나온 값</th><th>뜻</th><th>할 일</th></tr></thead><tbody><tr><td><code>200</code></td><td>익명으로 받아집니다</td><td>그대로 진행</td></tr><tr><td><code>401</code></td><td>아직 비공개입니다</td><td>Gitea → 저장소 → Settings에서 공개로 바꾸세요</td></tr><tr><td><code>404</code></td><td>이미지가 아직 없습니다</td><td>5)의 Actions가 성공했는지 확인</td></tr></tbody></table></div>

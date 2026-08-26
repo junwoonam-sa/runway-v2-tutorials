@@ -235,10 +235,18 @@ workflow** 를 눌러 한 번 돌려 보세요.
 | 어디 | Name | Value |
 |---|---|---|
 | **Variables** → Add Variable | `REGISTRY_HOST` | `gitea.<도메인>` — 주소창에 보이는 Gitea 주소에서 `https://` 를 뗀 것 |
+| **Variables** → Add Variable | `REGISTRY_OWNER` | **프로젝트 ID** — 이미지를 올릴 곳 |
 | **Secrets** → Add Secret | `REGISTRY_TOKEN` | 2)에서 만든 토큰 (`package` 가 `Write` 인 것) |
 
-예를 들어 Gitea 주소가 `https://gitea.mycompany.com` 이라면 `REGISTRY_HOST` 는
-`gitea.mycompany.com` 입니다. 앞에 `https://` 를 붙이면 안 됩니다.
+예를 들어 Gitea 주소가 `https://gitea.mycompany.com` 이고 프로젝트가 `my-project` 라면
+`REGISTRY_HOST` 는 `gitea.mycompany.com`, `REGISTRY_OWNER` 는 `my-project` 입니다.
+앞에 `https://` 를 붙이면 안 됩니다.
+
+> **왜 이미지만 프로젝트 조직으로 보내나.** 저장소를 내 계정에 만들어도 됩니다.
+> 소스는 사람이 읽고, 차트는 Argo CD가 **내 자격증명**으로 읽기 때문입니다. 그런데
+> **이미지는 노드가 프로젝트의 봇 자격증명으로 받아 갑니다.** 그 봇은 조직 범위만
+> 읽을 수 있어서, 내 계정 밑에 있는 이미지는 못 읽고 파드가 `ImagePullBackOff` 로
+> 멈춥니다. 그래서 이미지가 갈 곳만 따로 정해 줍니다.
 
 > ⚠ **사용자 Settings가 아니라 저장소 Settings 입니다.** 두 곳 모두 Actions 메뉴가
 > 있어서 헷갈립니다. 빠뜨리면 빌드가 이렇게 멈춥니다.
@@ -285,18 +293,20 @@ image:
   tag: "0.1.0"
 ```
 
-그리고 **이미지를 어디에 올렸느냐에 따라** 아래 한 곳이 갈립니다.
-
-| 이미지를 올린 곳 | `imagePullSecrets` |
-|---|---|
-| 내 계정 (저장소가 **공개**) | `[]` — 비워 둡니다. 자격증명이 필요 없습니다 |
-| 프로젝트 조직 | `- name: gitea-image-pull-secret-runway-bot-token` |
-
-내 계정 + 공개인 경우:
+그리고 이미지를 받아올 자격증명을 지정합니다. 5)에서 `REGISTRY_OWNER` 에 프로젝트
+ID를 넣었다면 이쪽입니다.
 
 ```yaml
-imagePullSecrets: []
+imagePullSecrets:
+  - name: gitea-image-pull-secret-runway-bot-token
 ```
+
+이 이름의 시크릿은 프로젝트에 이미 만들어져 있습니다 — 우리가 만들 것이 없습니다.
+
+> 이미지를 **내 계정** 밑에 두었다면 이 봇 자격증명으로는 읽지 못합니다. 그때는
+> 패키지를 공개로 만들고 `imagePullSecrets: []` 로 비워야 합니다. 다만 Gitea에서
+> 패키지 공개 여부는 저장소가 아니라 **계정 설정**을 따라가서 손이 더 갑니다.
+> 프로젝트 조직에 올리는 편이 단순합니다.
 
 **정말로 자격증명 없이 받아지는지 지금 확인해 두면** 배포 때 헤매지 않습니다.
 
