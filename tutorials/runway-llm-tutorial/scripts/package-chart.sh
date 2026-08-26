@@ -33,11 +33,39 @@ else
 fi
 
 echo "업로드…"
-curl -i --user "${GITEA_USER}:${GITEA_PAT}" \
+# 상태 코드를 따로 받습니다. 그냥 올리면 거부당해도 성공처럼 보입니다 —
+# 이미 있는 버전을 다시 올리는 것이 가장 흔하고, 그때 Gitea는 409를 줍니다.
+STATUS=$(curl -s -o /tmp/chart-upload.txt -w "%{http_code}" \
+  --user "${GITEA_USER}:${GITEA_PAT}" \
   -X POST --upload-file "${NAME}-${VERSION}.tgz" \
-  "https://${GITEA_HOST}/api/packages/${GITEA_OWNER}/helm/api/charts"
+  "https://${GITEA_HOST}/api/packages/${GITEA_OWNER}/helm/api/charts")
+
+case "$STATUS" in
+  2*)
+    echo "올라갔습니다 (HTTP $STATUS)"
+    ;;
+  409)
+    echo
+    echo "이미 ${NAME}-${VERSION} 이 올라가 있습니다 (HTTP 409)."
+    echo "같은 버전은 덮어쓰이지 않습니다. chart/Chart.yaml 의 version 을 올리고 다시 실행하세요."
+    exit 1
+    ;;
+  401|403)
+    echo
+    echo "인증이 거부되었습니다 (HTTP $STATUS)."
+    echo "토큰의 package 권한이 Write 인지 확인하세요. write:repository 만으로는 안 됩니다."
+    exit 1
+    ;;
+  *)
+    echo
+    echo "업로드에 실패했습니다 (HTTP $STATUS)"
+    cat /tmp/chart-upload.txt
+    exit 1
+    ;;
+esac
 
 echo
+
 echo "확인 — entries: 아래에 ${NAME} 과 ${VERSION} 이 보이면 리포지토리로서 완전합니다."
 curl -fsS --user "${GITEA_USER}:${GITEA_PAT}" \
   "https://${GITEA_HOST}/api/packages/${GITEA_OWNER}/helm/index.yaml" | head -30
