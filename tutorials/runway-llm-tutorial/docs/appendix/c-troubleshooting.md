@@ -80,7 +80,7 @@ Actions 화면에서 (3-1의 4~5단계):
 | `password is empty` | `REGISTRY_TOKEN` 시크릿이 없음 | 저장소 → Settings → Actions → **Secrets** |
 | `server gave HTTP response to HTTPS client` | `REGISTRY_HOST` 변수가 없음 | 저장소 → Settings → Actions → **Variables** 에 `gitea.<도메인>` |
 | `authGroup.Verify` | 토큰에 패키지 권한이 없음 | 토큰을 다시 만들면서 `package` 를 `Write` 로 |
-| 빌드는 됐는데 배포에서 `ImagePullBackOff` | 내 계정에 올렸는데 저장소가 비공개 | 저장소를 공개로 바꾸고 `imagePullSecrets: []` (3-1의 6단계) |
+| 빌드는 됐는데 배포에서 `ImagePullBackOff` (`401`) | 이미지가 개인 계정에 올라감 | `REGISTRY_OWNER` 변수에 프로젝트 ID를 넣고 태그를 올려 다시 빌드 (3-1의 5단계) |
 
 > **사용자 Settings가 아니라 저장소 Settings 입니다.** 두 곳 모두 Actions 메뉴가
 > 있어서, 엉뚱한 곳에 등록해 두고 왜 안 되는지 찾게 됩니다.
