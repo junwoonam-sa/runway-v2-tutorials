@@ -1549,6 +1549,7 @@ Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
 <div class="code block figure"><pre><code>https://github.com/junwoonam-sa/runway-v2-tutorials/archive/refs/heads/feature/runway-llm-tutorial.zip</code></pre></div>
 <h3 id="bot-1-필요한-것은-폴더-하나입니다">필요한 것은 폴더 하나입니다</h3>
 <p>압축을 풀면 튜토리얼이 여러 개 나오는데, 우리가 쓰는 것은 그중 하나뿐입니다.</p>
+
 <div class="code block figure"><pre><code>runway-v2-tutorials-feature-runway-llm-tutorial/
 └── tutorials/
     ├── energy-demand-prediction/       ← 다른 튜토리얼
@@ -1558,6 +1559,7 @@ Qdrant 주소      : http://qdrant.my-project.svc.cluster.local:6333
         ├── chart/     Runway에 설치하는 방법이 적힌 차트
         ├── docs/      지금 읽고 있는 이 문서
         └── scripts/   차트를 묶어 올리는 스크립트</code></pre></div>
+
 <p><code>runway-llm-tutorial</code> 폴더 하나가 챗봇의 전부입니다. 이 폴더를 Gitea에 올린 뒤, 그 안의 <code>app/</code> 으로 <strong>이미지</strong>를 만들고 <code>chart/</code> 로 <strong>차트</strong>를 만듭니다.</p>
 <h3 id="bot-1-code-server로-옮기기">Code Server로 옮기기</h3>
 <p>1-2에서 만든 Code Server 화면을 엽니다. 왼쪽 파일 목록의 <strong>빈 곳</strong>에 <code>runway-llm-tutorial</code> <strong>폴더를 끌어다 놓습니다.</strong> 폴더째 올라갑니다.</p>
@@ -1569,7 +1571,7 @@ ls</code></pre></div>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>unzip runway-v2-tutorials-feature-runway-llm-tutorial.zip
 cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial</code></pre></div></aside>
 <h3 id="bot-1-2-gitea에-로그인하고-토큰-만들기">2) Gitea에 로그인하고 토큰 만들기</h3>
-<p><strong>콘솔 → Built-in Apps → Gitea</strong> 카드로 들어갑니다. <strong>이 경로로 들어가야 합니다</strong> — 프로젝트 조직은 SSO로 로그인하는 순간에 만들어져서, 한 번도 들어간 적이 없으면 조직이 아예 안 보이고 404가 뜹니다.</p>
+<p><strong>콘솔 → Built-in Apps → Gitea</strong> 카드로 들어갑니다. <strong>이 경로로 들어가야 합니다</strong> 프로젝트 조직은 SSO로 로그인하는 순간에 만들어져서, 한 번도 들어간 적이 없으면 조직이 아예 안 보이고 404가 뜹니다.</p>
 <h4 id="bot-1-토큰-만들기">토큰 만들기</h4>
 <p>Gitea 화면에서 다섯 단계입니다.</p>
 <ol><li>오른쪽 위 <strong>프로필 사진</strong> → <strong>Settings</strong></li><li><strong>Applications</strong> 탭</li><li><strong>Token Name</strong> 칸에 이름을 적습니다 — 아무 이름이나 됩니다 (예: <code>llm-tutorial</code>)</li><li>권한 목록에서 <strong>두 가지를 <code>Write</code> 로</strong> 지정합니다</li></ol>
@@ -1584,7 +1586,7 @@ cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial
 <h3 id="bot-1-3-소스를-gitea-저장소에-올리기">3) 소스를 Gitea 저장소에 올리기</h3>
 <p>Gitea 화면 우측 상단 <strong>+ → New Repository</strong>. 세 칸만 봅니다.</p>
 <div class="table-wrap"><table><thead><tr><th>칸</th><th>넣을 값</th></tr></thead><tbody><tr><td>Owner</td><td>내 계정 또는 프로젝트 조직 — <strong>둘 다 됩니다</strong></td></tr><tr><td>Repository Name</td><td><code>llm-tutorial</code></td></tr><tr><td>Visibility</td><td><strong>Public</strong> (공개)</td></tr></tbody></table></div>
-<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>공개로 두는 이유.</strong> 여기 올린 이미지를 나중에 챗봇이 받아 갑니다. 내 계정 밑에 있는 비공개 이미지는 프로젝트가 읽지 못합니다 — 프로젝트가 쓰는 자격증명은 조직 봇 계정 것이라 개인 계정 범위 밖이기 때문입니다. <strong>공개로 두면 자격증명 자체가 필요 없어서</strong> 이 문제가 사라집니다. 프로젝트 조직 밑에 만들었다면 비공개여도 됩니다.</p></aside>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>공개로 두는 이유.</strong> 여기 올린 이미지를 나중에 챗봇이 받아 갑니다. 내 계정 밑에 있는 비공개 이미지는 프로젝트가 읽지 못합니다. 프로젝트가 쓰는 자격증명은 조직 봇 계정 것이라 개인 계정 범위 밖이기 때문입니다. <strong>공개로 두면 자격증명 자체가 필요 없어서</strong> 이 문제가 사라집니다. 프로젝트 조직 밑에 만들었다면 비공개여도 됩니다.</p></aside>
 <p>만든 뒤, Code Server 터미널에서 올립니다. <code>runway-llm-tutorial</code> 폴더 안에 있는지 먼저 확인하세요 — <code>ls</code> 했을 때 <code>app</code> 이 보이면 맞습니다.</p>
 <p><strong>첫 번째로, 커밋할 사람 정보를 정합니다.</strong> 이게 없으면 커밋이 아예 만들어지지 않습니다.</p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git config --global user.email &quot;내 이메일&quot;
@@ -1610,9 +1612,10 @@ git -c credential.helper= push -u origin main</code></pre></div>
 <p>저장소 화면의 <strong>Actions</strong> 탭을 엽니다. <code>build-image</code> 워크플로가 보이면 <strong>Run workflow</strong> 를 눌러 한 번 돌려 보세요.</p>
 <div class="table-wrap"><table><thead><tr><th>보이는 것</th><th>뜻</th><th>할 일</th></tr></thead><tbody><tr><td>몇 초 안에 로그가 흐르기 시작</td><td>러너 정상</td><td>5)로 갑니다</td></tr><tr><td><code>Waiting for runner…</code> 에서 멈춤</td><td>러너가 자기 이미지를 받지 못함</td><td>폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요</td></tr><tr><td>Actions 탭 자체가 없음</td><td>저장소에서 Actions가 꺼져 있음</td><td>Settings → Repository → Actions 켜기</td></tr></tbody></table></div>
 <h3 id="bot-1-5-이미지-빌드해서-올리기">5) 이미지 빌드해서 올리기</h3>
-<p>저장소에 <strong>토큰을 하나 등록해 둡니다.</strong> 러너가 레지스트리에 로그인할 때 씁니다.</p>
-<p><strong>Settings → Actions → Secrets → Add Secret</strong></p>
-<div class="table-wrap"><table><thead><tr><th>칸</th><th>값</th></tr></thead><tbody><tr><td>이름</td><td><code>REGISTRY_TOKEN</code></td></tr><tr><td>값</td><td>2)에서 만든 토큰 (<code>write:package</code> 필요)</td></tr></tbody></table></div>
+<p>먼저 <strong>토큰을 저장소에 등록합니다.</strong> 러너가 레지스트리에 로그인할 때 씁니다.</p>
+<p><strong>저장소 → Settings → Actions → Secrets → Add Secret</strong></p>
+<div class="table-wrap"><table><thead><tr><th>칸</th><th>값</th></tr></thead><tbody><tr><td>Name</td><td><code>REGISTRY_TOKEN</code> — 대문자와 밑줄까지 그대로</td></tr><tr><td>Value</td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong>사용자 Settings가 아니라 저장소 Settings 입니다.</strong> 두 곳 모두 Actions → Secrets 메뉴가 있어서 헷갈립니다. 워크플로가 읽는 것은 저장소 쪽입니다. 여기를 빠뜨리면 빌드가 <code>password is empty</code> 로 실패합니다.</p></aside>
 <p>그다음 태그를 밀면 빌드가 시작됩니다.</p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git tag v0.1.0
 git push origin v0.1.0</code></pre></div>
@@ -1815,7 +1818,7 @@ affinity: {}</code></pre></div>
 <p>걸리는 시간 10분.</p>
 <hr />
 <h2 id="bot-2-열어-보기">열어 보기</h2>
-<p>3-1에서 외부 접근을 켜지 않았습니다. 그래서 아직 인터넷 주소가 없습니다. 주소를 여는 것은 5단계에서 비밀번호를 건 다음에 합니다 — 그때까지는 <strong>내 화면에서만 잠깐 연결해서</strong> 봅니다.</p>
+<p>3-1에서 외부 접근을 켜지 않았습니다. 그래서 아직 인터넷 주소가 없습니다. 주소를 여는 것은 5단계에서 비밀번호를 건 다음에 합니다. 그때까지는 <strong>내 화면에서만 잠깐 연결해서</strong> 봅니다.</p>
 <p>Code Server 터미널에 아래 한 줄을 붙여 넣고 <code>&lt;프로젝트 ID&gt;</code> 만 내 것으로 바꾸세요.</p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>kubectl -n &lt;프로젝트 ID&gt; port-forward svc/llm-chat 8080:80</code></pre></div>
 <p>이 명령은 <strong>켜 둔 채로 두어야 합니다.</strong> 터미널을 닫거나 <code>Ctrl+C</code> 를 누르면 챗봇 화면도 닫힙니다. 다 보고 나면 그때 끄면 됩니다.</p>

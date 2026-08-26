@@ -228,14 +228,18 @@ workflow** 를 눌러 한 번 돌려 보세요.
 
 ### 5) 이미지 빌드해서 올리기
 
-저장소에 **토큰을 하나 등록해 둡니다.** 러너가 레지스트리에 로그인할 때 씁니다.
+먼저 **토큰을 저장소에 등록합니다.** 러너가 레지스트리에 로그인할 때 씁니다.
 
-**Settings → Actions → Secrets → Add Secret**
+**저장소 → Settings → Actions → Secrets → Add Secret**
 
 | 칸 | 값 |
 |---|---|
-| 이름 | `REGISTRY_TOKEN` |
-| 값 | 2)에서 만든 토큰 (`write:package` 필요) |
+| Name | `REGISTRY_TOKEN` — 대문자와 밑줄까지 그대로 |
+| Value | 2)에서 만든 토큰 (`package` 가 `Write` 인 것) |
+
+> ⚠ **사용자 Settings가 아니라 저장소 Settings 입니다.** 두 곳 모두 Actions →
+> Secrets 메뉴가 있어서 헷갈립니다. 워크플로가 읽는 것은 저장소 쪽입니다.
+> 여기를 빠뜨리면 빌드가 `password is empty` 로 실패합니다.
 
 그다음 태그를 밀면 빌드가 시작됩니다.
 

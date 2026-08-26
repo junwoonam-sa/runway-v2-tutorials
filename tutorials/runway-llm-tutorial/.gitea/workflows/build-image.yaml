@@ -49,6 +49,19 @@ jobs:
             echo "tag=0.0.0-${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: 토큰이 등록되어 있는지 확인
+        run: |
+          if [ -z "${{ secrets.REGISTRY_TOKEN }}" ]; then
+            echo "REGISTRY_TOKEN 시크릿이 비어 있습니다."
+            echo
+            echo "  저장소 → Settings → Actions → Secrets → Add Secret"
+            echo "    Name : REGISTRY_TOKEN"
+            echo "    Value: Gitea 개인 액세스 토큰 (package 권한이 Write 여야 합니다)"
+            echo
+            echo "사용자 Settings가 아니라 '저장소' Settings 입니다."
+            exit 1
+          fi
+
       - name: 레지스트리 로그인
         run: |
           echo "${{ secrets.REGISTRY_TOKEN }}" \
