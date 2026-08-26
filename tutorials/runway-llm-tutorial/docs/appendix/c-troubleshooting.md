@@ -60,6 +60,32 @@
 
 ---
 
+## 3단계 — 코드 올리기와 이미지 빌드
+
+터미널에서 (3-1의 3단계):
+
+| 이런 메시지가 나오면 | 원인 | 할 일 |
+|---|---|---|
+| `Author identity unknown` | git에 사용자 정보가 없음 | `git config --global user.email "…"` 과 `user.name "…"` |
+| `src refspec main does not match any` | 커밋이 하나도 없음 (위 오류의 결과) | 위를 먼저 하고 `git add -A && git commit -m "…"` |
+| `Missing or invalid credentials` + `ECONNREFUSED …vscode-git.sock` | Code Server의 로그인 창을 터미널이 쓸 수 없음 | `unset GIT_ASKPASS VSCODE_GIT_ASKPASS_NODE VSCODE_GIT_ASKPASS_MAIN VSCODE_GIT_IPC_HANDLE` 뒤 `git -c credential.helper= push -u origin main` |
+| `Authentication failed` | Password 칸에 계정 비밀번호를 넣음 | 그 칸에는 **토큰**을 넣습니다 (3-1의 2단계) |
+
+Actions 화면에서 (3-1의 4~5단계):
+
+| 이런 메시지가 나오면 | 원인 | 할 일 |
+|---|---|---|
+| `Waiting for runner…` 에서 안 움직임 | 러너가 자기 이미지를 받지 못함 | 폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요 |
+| `password is empty` | `REGISTRY_TOKEN` 시크릿이 없음 | 저장소 → Settings → Actions → **Secrets** |
+| `server gave HTTP response to HTTPS client` | `REGISTRY_HOST` 변수가 없음 | 저장소 → Settings → Actions → **Variables** 에 `gitea.<도메인>` |
+| `authGroup.Verify` | 토큰에 패키지 권한이 없음 | 토큰을 다시 만들면서 `package` 를 `Write` 로 |
+| 빌드는 됐는데 배포에서 `ImagePullBackOff` | 내 계정에 올렸는데 저장소가 비공개 | 저장소를 공개로 바꾸고 `imagePullSecrets: []` (3-1의 6단계) |
+
+> **사용자 Settings가 아니라 저장소 Settings 입니다.** 두 곳 모두 Actions 메뉴가
+> 있어서, 엉뚱한 곳에 등록해 두고 왜 안 되는지 찾게 됩니다.
+
+---
+
 ## 3단계 — 챗봇 배포
 
 | 이런 화면이 나오면 | 원인 | 할 일 |
