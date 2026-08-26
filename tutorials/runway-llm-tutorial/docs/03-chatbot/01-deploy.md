@@ -261,27 +261,17 @@ RUN pip install --no-cache-dir -r requirements-local-embeddings.txt
 
 로컬 계산을 쓰면 메모리도 조금 더 필요합니다. 6)에서 values를 채울 때 함께 올립니다.
 
-### 5) 이미지 빌드해서 올리기
+### 5) 등록해 두기 — 값 세 개
 
-먼저 **저장소에 두 가지를 등록합니다.** 빌드가 레지스트리에 로그인할 때 씁니다.
+빌드가 레지스트리에 로그인하고, 이미지와 차트를 어디에 올릴지 정하는 값들입니다.
 
-**저장소 → Settings → Actions** 로 가서, 두 곳에 하나씩 넣습니다.
+**저장소 → Settings → Actions**
 
 | 어디 | Name | Value |
 |---|---|---|
-| **Variables** → Add Variable | `REGISTRY_HOST` | `gitea.<도메인>` — 주소창에 보이는 Gitea 주소에서 `https://` 를 뗀 것 |
-| **Variables** → Add Variable | `REGISTRY_OWNER` | **프로젝트 ID** — 이미지를 올릴 곳 |
-| **Secrets** → Add Secret | `REGISTRY_TOKEN` | 2)에서 만든 토큰 (`package` 가 `Write` 인 것) |
-
-예를 들어 Gitea 주소가 `https://gitea.mycompany.com` 이고 프로젝트가 `my-project` 라면
-`REGISTRY_HOST` 는 `gitea.mycompany.com`, `REGISTRY_OWNER` 는 `my-project` 입니다.
-앞에 `https://` 를 붙이면 안 됩니다.
-
-> **왜 이미지만 프로젝트 조직으로 보내나.** 저장소를 내 계정에 만들어도 됩니다.
-> 소스는 사람이 읽고, 차트는 Argo CD가 **내 자격증명**으로 읽기 때문입니다. 그런데
-> **이미지는 노드가 프로젝트의 봇 자격증명으로 받아 갑니다.** 그 봇은 조직 범위만
-> 읽을 수 있어서, 내 계정 밑에 있는 이미지는 못 읽고 파드가 `ImagePullBackOff` 로
-> 멈춥니다. 그래서 이미지가 갈 곳만 따로 정해 줍니다.
+| **Variables** | `REGISTRY_HOST` | `gitea.<도메인>` — 주소창의 Gitea 주소에서 `https://` 를 뗀 것 |
+| **Variables** | `REGISTRY_OWNER` | **프로젝트 ID** — 이미지를 올릴 곳 |
+| **Secrets** | `REGISTRY_TOKEN` | 2)에서 만든 토큰 (`package` 가 `Write` 인 것) |
 
 > ⚠ **사용자 Settings가 아니라 저장소 Settings 입니다.** 두 곳 모두 Actions 메뉴가
 > 있어서 헷갈립니다. 빠뜨리면 빌드가 이렇게 멈춥니다.
@@ -290,156 +280,48 @@ RUN pip install --no-cache-dir -r requirements-local-embeddings.txt
 > |---|---|
 > | `REGISTRY_TOKEN` | `password is empty` |
 > | `REGISTRY_HOST` | `server gave HTTP response to HTTPS client` |
->
-> 두 번째는 주소를 안 알려 주면 빌드가 **클러스터 내부 주소**를 쓰기 때문입니다.
-> 그 주소는 평문이라 docker가 거부하고, 설령 올라가도 나중에 파드가 그 이름으로는
-> 이미지를 받지 못합니다.
 
-그다음 태그를 밀면 빌드가 시작됩니다.
+> **이미지는 프로젝트 조직에, 차트는 아무 데나.** 이미지는 노드가 프로젝트의 봇
+> 자격증명으로 받아 가는데 그 봇이 개인 계정을 못 읽습니다. 차트는 Argo CD가
+> **내 자격증명**으로 읽으니 개인 계정이어도 됩니다. 차트를 다른 곳에 올리고
+> 싶으면 `CHART_OWNER` 변수를 추가하세요 — 비워 두면 이 저장소가 있는 곳입니다.
 
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Actions 탭에서 진행을 볼 수 있습니다. 끝나면 로그 마지막에 이렇게 나옵니다.
-
-```
-올라간 이미지 — chart/values.yaml 에 이 두 값을 적으세요:
-  repository: gitea.<도메인>/<프로젝트 ID>/llm-tutorial
-  tag:        0.1.0
-```
-
-> **이미지는 저장소가 있는 곳에 올라갑니다.** 저장소를 내 계정에 만들었으면 이미지도
-> 내 계정 밑으로, 프로젝트 조직에 만들었으면 조직 밑으로 갑니다. 어느 쪽이든 되지만
-> **내 계정이라면 저장소가 공개여야 합니다** — 비공개면 프로젝트가 이미지를 읽지 못해
-> 파드가 `ImagePullBackOff` 로 멈춥니다. 6)에서 확인하는 방법이 나옵니다.
-
-> **같은 태그를 다시 쓰지 마세요.** 쿠버네티스는 이미 받아 둔 이미지를 다시 받지
-> 않습니다. 코드를 고쳤다면 `v0.1.1`, `v0.1.2` 로 올리세요.
-
-### 6) 차트가 그 이미지를 가리키게 하기
-
-빌드 로그 마지막에 나온 두 값을 `chart/values.yaml` 에 적습니다.
-
-```yaml
-image:
-  repository: "gitea.<도메인>/<계정 또는 조직>/llm-tutorial"
-  tag: "0.1.0"
-```
-
-그리고 이미지를 받아올 자격증명을 지정합니다. 5)에서 `REGISTRY_OWNER` 에 프로젝트
-ID를 넣었다면 이쪽입니다.
-
-```yaml
-imagePullSecrets:
-  - name: gitea-image-pull-secret-runway-bot-token
-```
-
-이 이름의 시크릿은 프로젝트에 이미 만들어져 있습니다 — 우리가 만들 것이 없습니다.
-
-**앱 안에서 임베딩을 계산하기로 했다면** 세 곳을 더 맞춥니다.
-
-```yaml
-runway:
-  embedding:
-    provider: "local"
-    cachePath: /data/embedding-cache   # 볼륨 위에 둡니다
-  storage:
-    enabled: true
-    existingClaim: "llm-tutorial-data"
-
-resources:
-  limits:
-    cpu: "1"
-    memory: 2Gi                        # 기본 1Gi로는 빠듯합니다
-```
-
-볼륨이 없으면 차트가 렌더 단계에서 거부합니다 — 파드가 재시작할 때마다 모델을
-다시 받게 되기 때문입니다.
-
-> 이미지를 **내 계정** 밑에 두었다면 이 봇 자격증명으로는 읽지 못합니다. 그때는
-> 패키지를 공개로 만들고 `imagePullSecrets: []` 로 비워야 합니다. 다만 Gitea에서
-> 패키지 공개 여부는 저장소가 아니라 **계정 설정**을 따라가서 손이 더 갑니다.
-> 프로젝트 조직에 올리는 편이 단순합니다.
-
-**이미지가 제대로 올라갔는지** 확인해 두면 배포 때 헤매지 않습니다. 5)에서
-`REGISTRY_OWNER` 에 넣은 곳에 있어야 합니다.
+### 6) 태그를 밀면 나머지는 자동입니다
 
 ```bash
-curl -s -u <계정> https://gitea.<도메인>/v2/<프로젝트 ID>/llm-tutorial/tags/list; echo
+git add -A && git commit -m "설정 반영" && git push
+git tag v0.1.0 && git push origin v0.1.0
 ```
 
-토큰을 물으면 붙여 넣으세요. 이렇게 나오면 정상입니다.
+Actions 탭에서 진행이 보입니다. 태그 하나로 네 가지가 일어납니다.
 
-```json
-{"name":"<프로젝트 ID>/llm-tutorial","tags":["0.1.0"]}
-```
+1. `app/` 을 이미지로 빌드해 올림
+2. 그 이미지 주소와 태그를 `chart/values.yaml` 에 박아 넣음
+3. 차트 버전을 태그와 같게 맞춤
+4. 차트를 묶어 Helm 레지스트리에 올림
 
-| 나온 것 | 뜻 | 할 일 |
-|---|---|---|
-| 태그 목록 | 제대로 올라갔습니다 | 그대로 진행 |
-| `404` | 그 위치에 이미지가 없습니다 | `REGISTRY_OWNER` 를 확인하고 태그를 올려 다시 빌드 |
-| `401` (토큰을 넣었는데도) | 그 조직에 권한이 없습니다 | 프로젝트 멤버인지, Gitea에 SSO 로그인했는지 확인 |
-
-이미지가 **개인 계정**에 올라가 있으면 배포 때 파드가 `ImagePullBackOff` 로 멈춥니다.
-노드는 프로젝트의 봇 자격증명으로 받아 가는데, 그 봇이 개인 계정을 읽지 못하기
-때문입니다. 그때는 `REGISTRY_OWNER` 를 프로젝트 ID로 고치고 태그를 올려 다시
-빌드하세요.
-
-### 7) 차트 올리기
-
-이미지는 올렸지만 Runway가 읽는 것은 **차트**입니다.
-
-**번호가 세 개 나옵니다.** 서로 다른 것이라 헷갈리기 쉽습니다.
-
-| 무엇 | 어디서 정하나 |
-|---|---|
-| 이미지 태그 | git 태그 — `git tag v0.1.0` |
-| **차트 버전** | **`chart/Chart.yaml` 의 `version:`** |
-| appVersion | `chart/Chart.yaml` 의 `appVersion:` — 표시용 |
-
-처음 올릴 때는 그대로 두면 됩니다. **두 번째부터는 차트 버전을 올려야 합니다** —
-같은 버전을 다시 올리면 레지스트리가 덮어쓰지 않고, 화면에도 새 것이 안 보입니다.
-
-```bash
-sed -i 's/^version: .*/version: 0.1.1/' chart/Chart.yaml
-sed -i 's/^appVersion: .*/appVersion: "0.1.1"/' chart/Chart.yaml
-```
-
-저장소에 들어 있는 스크립트가 묶어서 올려 줍니다 — **helm이 없어도 됩니다.**
-
-```bash
-GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<계정 또는 조직>   bash scripts/package-chart.sh
-```
-
-`GITEA_OWNER` 는 저장소를 만든 곳과 같습니다. 토큰을 물으면 붙여 넣으세요.
-
-> **앞에 `bash` 를 붙이는 이유.** 브라우저로 끌어다 놓은 파일에는 실행 권한이
-> 붙지 않습니다. 그냥 `scripts/package-chart.sh` 로 실행하면
-> `Permission denied` 가 납니다. `bash` 로 실행하면 권한과 무관하게 동작합니다
-> (`sudo` 는 도움이 되지 않습니다 — 오히려 경로를 못 찾습니다).
-
-끝나면 마지막 줄에 **등록할 주소**가 나옵니다.
+**손으로 버전을 맞출 일이 없습니다.** 로그 마지막에 등록할 주소와 차트 버전이
+나옵니다.
 
 ```
-https://gitea.<도메인>/api/packages/<계정 또는 조직>/helm
+애플리케이션 생성 폼에 넣을 리포지토리 URL:
+  https://gitea.<도메인>/api/packages/<계정 또는 조직>/helm
+차트 버전: 0.1.0
 ```
 
 이 주소를 [0-1 템플릿 ②](../00-preparation/01-keys.md)의 `차트 리포지토리` 줄에
 적어 두세요. 바로 아래에서 씁니다.
 
-> **패키지 화면에 두 개가 보이면 정상입니다.** 계정 페이지(`.../-/packages`)에
-> 타입이 `Container` 인 것과 `Helm` 인 것이 각각 하나씩 생깁니다. 앞은 파드가
-> 실행할 이미지, 뒤는 Runway가 읽을 차트입니다. **등록하는 주소는 Helm 쪽입니다.**
+> **고칠 때마다 태그를 올리세요.** `v0.1.1`, `v0.1.2` … 같은 태그를 다시 쓰면
+> 두 곳에서 막힙니다. 노드는 이미 받아 둔 이미지를 다시 받지 않고, Helm
+> 레지스트리는 같은 차트 버전을 덮어쓰지 않습니다(`409`).
 
-> **이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.** Helm 리포지토리는 사람이
-> 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 `index.yaml` 을 보여 주는데,
-> 거기 `entries:` 아래에 `llm-tutorial` 과 버전이 보이면 제대로 올라간 것입니다.
+> **패키지가 두 개 생기면 정상입니다.** 계정 페이지(`.../-/packages`)에 타입이
+> `Container` 인 것과 `Helm` 인 것이 하나씩 보입니다. 앞은 파드가 실행할 이미지,
+> 뒤는 Runway가 읽을 차트입니다. **등록하는 주소는 Helm 쪽입니다.**
 
-> **이미 배포한 뒤에 다시 올렸다면**, 애플리케이션 화면에서 **설정 수정 → 차트 버전**을
-> 새 번호로 바꾸고 다시 배포해야 반영됩니다. 차트를 올린 것만으로는 이미 떠 있는
-> 애플리케이션이 바뀌지 않습니다.
+> **직접 올리고 싶다면** 저장소의 `scripts/package-chart.sh` 가 차트만 따로
+> 묶어 올립니다 — `bash scripts/package-chart.sh`. 워크플로가 하는 일과 같습니다.
 
 ---
 
@@ -651,6 +533,24 @@ affinity: {}
 > ⚠ **덧붙이지 말고 지우고 넣으세요.** 같은 키가 두 번 있으면 YAML은 **뒤에 나온 것을**
 > 씁니다. 앞에 적은 값이 오류 없이 무시되고, 증상은 "설정했는데 동작하지 않는다"로
 > 나타납니다.
+
+> **앱 안에서 임베딩을 계산하기로 했다면**(위 「이미지를 만들기 전에」 참고) 두 곳을
+> 더 고칩니다.
+>
+> ```yaml
+> runway:
+>   embedding:
+>     provider: "local"
+>     cachePath: /data/embedding-cache
+>
+> resources:
+>   limits:
+>     cpu: "1"
+>     memory: 2Gi          # 기본 1Gi로는 빠듯합니다
+> ```
+>
+> 볼륨(`storage.enabled`)은 이미 켜져 있어야 합니다 — 첫 실행에서 받은 모델
+> 가중치를 거기에 두고, 그래야 파드가 재시작해도 다시 받지 않습니다.
 
 ### AI 모델 이름은 안 적어도 됩니다
 

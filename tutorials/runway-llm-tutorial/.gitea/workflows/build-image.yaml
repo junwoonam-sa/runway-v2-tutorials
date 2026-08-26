@@ -1,33 +1,38 @@
-# 컨테이너 이미지를 클러스터 안에서 빌드해 Gitea 레지스트리에 올립니다.
+# 태그 하나로 이미지와 차트를 함께 게시합니다.
 #
-# 왜 이 파일이 있나:
+#   git tag v0.1.2 && git push origin v0.1.2
+#
+# 그러면 이 워크플로가 순서대로 합니다.
+#   1. app/ 을 이미지로 빌드해 Gitea 컨테이너 레지스트리에 올림
+#   2. 그 이미지 주소와 태그를 chart/values.yaml 에 박아 넣음
+#   3. 차트 버전을 태그와 같게 맞춤
+#   4. 차트를 묶어 Gitea Helm 레지스트리에 올림
+#
+# 왜 클러스터 안에서 빌드하나:
 #   Code Server에는 도커 CLI는 있어도 데몬이 없습니다(권한 없는 Pod이라 띄울 수도
-#   없습니다). 그래서 이미지를 거기서 만들 수 없습니다. 대신 플랫폼이 미리 깔아 둔
-#   Gitea Actions 러너에 맡깁니다 — 러너에는 도커가 사이드카로 붙어 있습니다.
+#   없습니다). 플랫폼이 미리 깔아 둔 Gitea Actions 러너에는 도커가 사이드카로
+#   붙어 있어서, 빌드를 그쪽에 맡깁니다.
 #
-# 쓰기 전에 한 번만 해 둘 것 — 저장소 Settings → Actions 에서 둘을 등록합니다.
-#   Variables → REGISTRY_HOST : gitea.<도메인>      (예: gitea.try.mrxrunway.ai)
-#   Variables → REGISTRY_OWNER: 프로젝트 ID          (이미지를 올릴 곳. 아래 설명)
+# 쓰기 전에 한 번만 해 둘 것 — 저장소 Settings → Actions:
+#   Variables → REGISTRY_HOST : gitea.<도메인>   (예: gitea.try.mrxrunway.ai)
+#   Variables → REGISTRY_OWNER: 프로젝트 ID      (이미지를 올릴 곳)
+#   Variables → CHART_OWNER   : (선택) 차트를 올릴 곳. 비우면 이 저장소가 있는 곳
 #   Secrets   → REGISTRY_TOKEN: Gitea 개인 액세스 토큰 (package 권한이 Write)
 #
-#   REGISTRY_OWNER 를 프로젝트 조직으로 두는 이유: 파드가 이미지를 받아올 때 쓰는
-#   자격증명은 조직 봇 계정 것이라 개인 계정 밑의 이미지를 읽지 못합니다. 저장소
-#   자체는 개인 계정에 있어도 됩니다.
+#   이미지와 차트의 규칙이 다릅니다. 이미지는 노드가 프로젝트의 봇 자격증명으로
+#   받아 가므로 프로젝트 조직에 있어야 하고, 차트는 Argo CD가 사용자 자격증명으로
+#   읽으므로 개인 계정에 있어도 됩니다.
 #
 #   REGISTRY_HOST 를 따로 받는 이유: 워크플로 안에서 얻을 수 있는 서버 주소는
 #   클러스터 내부용(http://gitea-http:3000)이라 평문 HTTP입니다. docker가 거부하고
 #   ("server gave HTTP response to HTTPS client"), 설령 올리더라도 나중에 노드가
 #   그 이름으로는 이미지를 받아오지 못합니다.
 #
-# 실행:
-#   git tag v0.1.0 && git push origin v0.1.0
-#   또는 저장소의 Actions 탭에서 Run workflow
-#
-# 태그를 재사용하지 마세요. kubelet은 이미 받아 둔 이미지를 다시 받지 않으므로
-# (imagePullPolicy: IfNotPresent), 같은 태그로 다시 올리면 노드는 옛 이미지를 계속
-# 씁니다. 증상이 "고쳤는데 반영이 안 된다"로 나타납니다.
+# 태그를 재사용하지 마세요. kubelet은 이미 받아 둔 이미지를 다시 받지 않고
+# (imagePullPolicy: IfNotPresent), Helm 레지스트리도 같은 차트 버전을 덮어쓰지
+# 않습니다. 고칠 때마다 v0.1.3, v0.1.4 로 올리세요.
 
-name: build-image
+name: release
 
 on:
   push:
@@ -35,7 +40,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  image:
+  release:
     # 플랫폼 러너가 붙어 있는 라벨입니다. ubuntu-22.04, ubuntu-20.04 도 있습니다.
     runs-on: ubuntu-latest
 
@@ -70,25 +75,33 @@ jobs:
         id: meta
         run: |
           # 이미지를 올릴 곳. REGISTRY_OWNER 를 정해 두었으면 그쪽으로, 아니면
-          # 이 저장소가 있는 곳으로 갑니다.
-          #
-          # 프로젝트 조직 이름을 넣는 것을 권합니다. 파드가 이미지를 받아올 때 쓰는
-          # 자격증명이 조직 봇 계정 것이라, 개인 계정 밑에 있는 이미지는 읽지 못하고
-          # ImagePullBackOff 가 납니다. 소스와 차트는 개인 계정에 둬도 됩니다 —
-          # 그 둘은 사람과 Argo CD가 각자 자기 자격증명으로 읽기 때문입니다.
-          OWNER="${{ vars.REGISTRY_OWNER }}"
-          if [ -z "$OWNER" ]; then
-            OWNER="${GITHUB_REPOSITORY%%/*}"
-            echo "REGISTRY_OWNER 변수가 없어 저장소가 있는 곳(${OWNER})에 올립니다."
+          # 이 저장소가 있는 곳으로 갑니다. 프로젝트 조직을 권합니다 — 개인 계정
+          # 밑에 있는 이미지는 프로젝트의 봇 자격증명으로 못 읽어
+          # ImagePullBackOff 가 납니다.
+          IMAGE_OWNER="${{ vars.REGISTRY_OWNER }}"
+          if [ -z "$IMAGE_OWNER" ]; then
+            IMAGE_OWNER="${GITHUB_REPOSITORY%%/*}"
+            echo "REGISTRY_OWNER 가 없어 저장소가 있는 곳(${IMAGE_OWNER})에 이미지를 올립니다."
             echo "파드가 이미지를 못 받으면 이 변수에 프로젝트 ID를 넣으세요."
           fi
-          echo "image=${{ vars.REGISTRY_HOST }}/${OWNER}/llm-tutorial" >> "$GITHUB_OUTPUT"
+
+          # 차트를 올릴 곳. 개인 계정이어도 됩니다.
+          CHART_OWNER="${{ vars.CHART_OWNER }}"
+          if [ -z "$CHART_OWNER" ]; then
+            CHART_OWNER="${GITHUB_REPOSITORY%%/*}"
+          fi
 
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
-            echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            VERSION="${GITHUB_REF_NAME#v}"
           else
-            echo "tag=0.0.0-${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+            VERSION="0.0.0-${GITHUB_SHA:0:7}"
           fi
+
+          {
+            echo "image=${{ vars.REGISTRY_HOST }}/${IMAGE_OWNER}/llm-tutorial"
+            echo "tag=${VERSION}"
+            echo "chart_owner=${CHART_OWNER}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: 레지스트리 로그인
         run: |
@@ -96,12 +109,68 @@ jobs:
             | docker login "${{ vars.REGISTRY_HOST }}" \
                 --username "${{ github.actor }}" --password-stdin
 
-      - name: 빌드와 푸시
+      - name: 이미지 빌드와 푸시
         run: |
           IMAGE="${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}"
           docker build -t "$IMAGE" app/
           docker push "$IMAGE"
+          echo "올라간 이미지: $IMAGE"
+
+      - name: 차트에 이미지 주소와 버전 박아 넣기
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          VERSION="${{ steps.meta.outputs.tag }}"
+
+          # 차트가 방금 올린 이미지를 가리키게 합니다. 손으로 맞추지 않아도 됩니다.
+          sed -i "s|^  repository:.*|  repository: \"${IMAGE}\"|" chart/values.yaml
+          sed -i "s|^  tag:.*|  tag: \"${VERSION}\"|" chart/values.yaml
+
+          # 차트 버전을 태그와 같게. 같은 버전은 레지스트리가 덮어쓰지 않습니다.
+          sed -i "s|^version:.*|version: ${VERSION}|" chart/Chart.yaml
+          sed -i "s|^appVersion:.*|appVersion: \"${VERSION}\"|" chart/Chart.yaml
+
+          grep -E '^(version|appVersion):' chart/Chart.yaml
+          grep -A 2 '^image:' chart/values.yaml
+
+      - name: 차트 묶어서 올리기
+        run: |
+          NAME=$(awk '/^name:/{print $2}' chart/Chart.yaml)
+          VERSION="${{ steps.meta.outputs.tag }}"
+          OWNER="${{ steps.meta.outputs.chart_owner }}"
+
+          # helm 없이 묶습니다. 규칙은 둘 — 아카이브 루트 디렉터리 이름이 Chart.yaml의
+          # name 과 같을 것, 파일명이 <name>-<version>.tgz 일 것.
+          rm -rf /tmp/pkg && mkdir -p "/tmp/pkg/${NAME}"
+          cp -r chart/* "/tmp/pkg/${NAME}/"
+          tar -czf "${NAME}-${VERSION}.tgz" -C /tmp/pkg "${NAME}"
+
+          STATUS=$(curl -s -o /tmp/chart-upload.txt -w "%{http_code}" \
+            --user "${{ github.actor }}:${{ secrets.REGISTRY_TOKEN }}" \
+            -X POST --upload-file "${NAME}-${VERSION}.tgz" \
+            "https://${{ vars.REGISTRY_HOST }}/api/packages/${OWNER}/helm/api/charts")
+
+          case "$STATUS" in
+            2*)
+              echo "차트를 올렸습니다 (HTTP $STATUS)"
+              ;;
+            409)
+              echo "이미 ${NAME}-${VERSION} 이 올라가 있습니다 (HTTP 409)."
+              echo "같은 버전은 덮어쓰이지 않습니다. 태그를 올려 다시 실행하세요."
+              exit 1
+              ;;
+            401|403)
+              echo "차트 업로드가 거부되었습니다 (HTTP $STATUS)."
+              echo "토큰의 package 권한이 Write 인지 확인하세요."
+              exit 1
+              ;;
+            *)
+              echo "차트 업로드에 실패했습니다 (HTTP $STATUS)"
+              cat /tmp/chart-upload.txt
+              exit 1
+              ;;
+          esac
+
           echo
-          echo "올라간 이미지 — chart/values.yaml 에 이 두 값을 적으세요:"
-          echo "  repository: ${{ steps.meta.outputs.image }}"
-          echo "  tag:        ${{ steps.meta.outputs.tag }}"
+          echo "애플리케이션 생성 폼에 넣을 리포지토리 URL:"
+          echo "  https://${{ vars.REGISTRY_HOST }}/api/packages/${OWNER}/helm"
+          echo "차트 버전: ${VERSION}"
