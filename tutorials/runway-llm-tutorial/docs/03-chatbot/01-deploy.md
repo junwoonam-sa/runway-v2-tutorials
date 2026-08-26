@@ -109,19 +109,42 @@ ls
 프로젝트 조직은 SSO로 로그인하는 순간에 만들어져서, 한 번도 들어간 적이 없으면
 조직이 아예 안 보이고 404가 뜹니다.
 
-**프로필 → Settings → Applications → Generate Token.** 스코프 두 개를 켭니다.
+#### 토큰 만들기
 
-| 스코프 | 무엇에 필요한가 |
+Gitea 화면에서 다섯 단계입니다.
+
+1. 오른쪽 위 **프로필 사진** → **Settings**
+2. **Applications** 탭
+3. **Token Name** 칸에 이름을 적습니다 — 아무 이름이나 됩니다 (예: `llm-tutorial`)
+4. 권한 목록에서 **두 가지를 `Write` 로** 지정합니다
+
+   | 항목 | 지정할 값 | 무엇에 쓰나 |
+   |---|---|---|
+   | `repository` | **Write** | 저장소를 만들고 소스를 올릴 때 |
+   | `package` | **Write** | 이미지와 차트를 올릴 때 |
+
+   버전에 따라 `write:repository` · `write:package` 를 **체크하는** 화면일 수도
+   있습니다. 이름이 같으니 그대로 켜면 됩니다.
+
+5. **Generate Token**
+
+값이 화면 위쪽에 **한 번만** 나옵니다. 지금 복사해서 0-1에서 열어 둔 메모장에
+붙여 두세요. 창을 벗어나면 다시 볼 수 없고, 그때는 지우고 새로 만드는 수밖에
+없습니다.
+
+#### 이 토큰을 두 곳에서 씁니다
+
+| 어디에 | 언제 |
 |---|---|
-| `write:package` | 이미지와 차트 올리기 |
-| `write:repository` | 소스도 함께 올릴 때 |
+| 터미널이 묻는 `Password` 칸 | 3)에서 소스를 올릴 때 |
+| 저장소의 `REGISTRY_TOKEN` 시크릿 | 5)에서 이미지를 빌드할 때 |
 
-> ⚠ **`write:repository` 만으로는 실패합니다.** 이미지와 차트는 저장소가 아니라
-> **패키지 레지스트리**에 올라갑니다. 오류 메시지가 `authGroup.Verify` 처럼 나와서
-> 원인을 알기 어렵습니다.
+> ⚠ **`repository` 만 켜면 실패합니다.** 이미지와 차트는 저장소가 아니라
+> **패키지 레지스트리**에 올라갑니다. 그때 나오는 오류가 `authGroup.Verify` 처럼
+> 생겨서 원인을 알기 어렵습니다.
 
-토큰은 한 번만 표시됩니다. 그리고 **주소에 끼워 넣지 마세요** — 셸 기록과
-`.git/config` 에 남습니다.
+> ⚠ **토큰을 주소에 끼워 넣지 마세요.** `https://<계정>:<토큰>@gitea...` 형태로 쓰면
+> 셸 기록과 `.git/config` 에 남습니다. Code Server의 홈은 재시작해도 남는 볼륨입니다.
 
 ### 3) 소스를 Gitea 저장소에 올리기
 
@@ -181,10 +204,13 @@ git -c credential.helper= push -u origin main
 > `Missing or invalid credentials` 와 `ECONNREFUSED /tmp/vscode-git-….sock` 입니다.
 > 저 줄이 그 방식을 꺼서, 터미널이 직접 묻게 만듭니다.
 
-> ⚠ **토큰을 주소에 끼워 넣지 마세요.** `https://<계정>:<토큰>@gitea...` 형태로 쓰면
-> 셸 기록과 `.git/config` 에 남고, Code Server의 홈은 재시작해도 남습니다.
-> 매번 묻는 것이 번거로우면 한 시간만 기억하게 할 수 있습니다 —
-> `git config --global credential.helper 'cache --timeout=3600'`.
+> **매번 묻는 것이 번거로우면** 한 시간만 기억하게 할 수 있습니다.
+>
+> ```bash
+> git config --global credential.helper 'cache --timeout=3600'
+> ```
+>
+> 파일로 저장하는 `store` 는 권하지 않습니다 — 토큰이 평문으로 남습니다.
 
 ### 4) 러너가 살아 있는지 먼저 확인하기
 

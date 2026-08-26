@@ -1570,10 +1570,17 @@ ls</code></pre></div>
 cd runway-v2-tutorials-feature-runway-llm-tutorial/tutorials/runway-llm-tutorial</code></pre></div></aside>
 <h3 id="bot-1-2-gitea에-로그인하고-토큰-만들기">2) Gitea에 로그인하고 토큰 만들기</h3>
 <p><strong>콘솔 → Built-in Apps → Gitea</strong> 카드로 들어갑니다. <strong>이 경로로 들어가야 합니다</strong> — 프로젝트 조직은 SSO로 로그인하는 순간에 만들어져서, 한 번도 들어간 적이 없으면 조직이 아예 안 보이고 404가 뜹니다.</p>
-<p><strong>프로필 → Settings → Applications → Generate Token.</strong> 스코프 두 개를 켭니다.</p>
-<div class="table-wrap"><table><thead><tr><th>스코프</th><th>무엇에 필요한가</th></tr></thead><tbody><tr><td><code>write:package</code></td><td>이미지와 차트 올리기</td></tr><tr><td><code>write:repository</code></td><td>소스도 함께 올릴 때</td></tr></tbody></table></div>
-<aside class="callout warn"><p class="callout-label">주의</p><p><strong><code>write:repository</code> 만으로는 실패합니다.</strong> 이미지와 차트는 저장소가 아니라 <strong>패키지 레지스트리</strong>에 올라갑니다. 오류 메시지가 <code>authGroup.Verify</code> 처럼 나와서 원인을 알기 어렵습니다.</p></aside>
-<p>토큰은 한 번만 표시됩니다. 그리고 <strong>주소에 끼워 넣지 마세요</strong> — 셸 기록과 <code>.git/config</code> 에 남습니다.</p>
+<h4 id="bot-1-토큰-만들기">토큰 만들기</h4>
+<p>Gitea 화면에서 다섯 단계입니다.</p>
+<ol><li>오른쪽 위 <strong>프로필 사진</strong> → <strong>Settings</strong></li><li><strong>Applications</strong> 탭</li><li><strong>Token Name</strong> 칸에 이름을 적습니다 — 아무 이름이나 됩니다 (예: <code>llm-tutorial</code>)</li><li>권한 목록에서 <strong>두 가지를 <code>Write</code> 로</strong> 지정합니다</li></ol>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>지정할 값</th><th>무엇에 쓰나</th></tr></thead><tbody><tr><td><code>repository</code></td><td><strong>Write</strong></td><td>저장소를 만들고 소스를 올릴 때</td></tr><tr><td><code>package</code></td><td><strong>Write</strong></td><td>이미지와 차트를 올릴 때</td></tr></tbody></table></div>
+<p>버전에 따라 <code>write:repository</code> · <code>write:package</code> 를 <strong>체크하는</strong> 화면일 수도 있습니다. 이름이 같으니 그대로 켜면 됩니다.</p>
+<ol><li><strong>Generate Token</strong></li></ol>
+<p>값이 화면 위쪽에 <strong>한 번만</strong> 나옵니다. 지금 복사해서 0-1에서 열어 둔 메모장에 붙여 두세요. 창을 벗어나면 다시 볼 수 없고, 그때는 지우고 새로 만드는 수밖에 없습니다.</p>
+<h4 id="bot-1-이-토큰을-두-곳에서-씁니다">이 토큰을 두 곳에서 씁니다</h4>
+<div class="table-wrap"><table><thead><tr><th>어디에</th><th>언제</th></tr></thead><tbody><tr><td>터미널이 묻는 <code>Password</code> 칸</td><td>3)에서 소스를 올릴 때</td></tr><tr><td>저장소의 <code>REGISTRY_TOKEN</code> 시크릿</td><td>5)에서 이미지를 빌드할 때</td></tr></tbody></table></div>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong><code>repository</code> 만 켜면 실패합니다.</strong> 이미지와 차트는 저장소가 아니라 <strong>패키지 레지스트리</strong>에 올라갑니다. 그때 나오는 오류가 <code>authGroup.Verify</code> 처럼 생겨서 원인을 알기 어렵습니다.</p>
+<p>⚠ <strong>토큰을 주소에 끼워 넣지 마세요.</strong> <code>https://&lt;계정&gt;:&lt;토큰&gt;@gitea...</code> 형태로 쓰면 셸 기록과 <code>.git/config</code> 에 남습니다. Code Server의 홈은 재시작해도 남는 볼륨입니다.</p></aside>
 <h3 id="bot-1-3-소스를-gitea-저장소에-올리기">3) 소스를 Gitea 저장소에 올리기</h3>
 <p>Gitea 화면 우측 상단 <strong>+ → New Repository</strong>. 세 칸만 봅니다.</p>
 <div class="table-wrap"><table><thead><tr><th>칸</th><th>넣을 값</th></tr></thead><tbody><tr><td>Owner</td><td>내 계정 또는 프로젝트 조직 — <strong>둘 다 됩니다</strong></td></tr><tr><td>Repository Name</td><td><code>llm-tutorial</code></td></tr><tr><td>Visibility</td><td><strong>Public</strong> (공개)</td></tr></tbody></table></div>
@@ -1595,7 +1602,9 @@ git -c credential.helper= push -u origin main</code></pre></div>
 <div class="table-wrap"><table><thead><tr><th>물어보는 것</th><th>넣을 값</th></tr></thead><tbody><tr><td><code>Username</code></td><td>Gitea 계정 이름</td></tr><tr><td><code>Password</code></td><td><strong>2)에서 만든 토큰</strong> — 계정 비밀번호가 아닙니다</td></tr></tbody></table></div>
 <p>토큰을 붙여 넣어도 화면에는 아무것도 안 보입니다. 정상입니다. 그대로 엔터를 치세요.</p>
 <aside class="callout warn"><p class="callout-label">주의</p><p><strong><code>unset</code> 줄을 빼면 실패합니다.</strong> Code Server는 편집기 화면에 로그인 창을 띄우는 방식으로 자격증명을 받는데, 터미널에서는 그 창으로 갈 수 없습니다. 증상은 <code>Missing or invalid credentials</code> 와 <code>ECONNREFUSED /tmp/vscode-git-….sock</code> 입니다. 저 줄이 그 방식을 꺼서, 터미널이 직접 묻게 만듭니다.</p>
-<p>⚠ <strong>토큰을 주소에 끼워 넣지 마세요.</strong> <code>https://&lt;계정&gt;:&lt;토큰&gt;@gitea...</code> 형태로 쓰면 셸 기록과 <code>.git/config</code> 에 남고, Code Server의 홈은 재시작해도 남습니다. 매번 묻는 것이 번거로우면 한 시간만 기억하게 할 수 있습니다 — <code>git config --global credential.helper &#x27;cache --timeout=3600&#x27;</code>.</p></aside>
+<p><strong>매번 묻는 것이 번거로우면</strong> 한 시간만 기억하게 할 수 있습니다.</p>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git config --global credential.helper &#x27;cache --timeout=3600&#x27;</code></pre></div>
+<p>파일로 저장하는 <code>store</code> 는 권하지 않습니다 — 토큰이 평문으로 남습니다.</p></aside>
 <h3 id="bot-1-4-러너가-살아-있는지-먼저-확인하기">4) 러너가 살아 있는지 먼저 확인하기</h3>
 <p>이미지 빌드를 맡기기 전에, 러너가 실제로 도는지 봅니다. <strong>여기서 막히면 뒤가 전부 막히므로 먼저 확인하는 편이 낫습니다.</strong></p>
 <p>저장소 화면의 <strong>Actions</strong> 탭을 엽니다. <code>build-image</code> 워크플로가 보이면 <strong>Run workflow</strong> 를 눌러 한 번 돌려 보세요.</p>
