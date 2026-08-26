@@ -228,18 +228,29 @@ workflow** 를 눌러 한 번 돌려 보세요.
 
 ### 5) 이미지 빌드해서 올리기
 
-먼저 **토큰을 저장소에 등록합니다.** 러너가 레지스트리에 로그인할 때 씁니다.
+먼저 **저장소에 두 가지를 등록합니다.** 빌드가 레지스트리에 로그인할 때 씁니다.
 
-**저장소 → Settings → Actions → Secrets → Add Secret**
+**저장소 → Settings → Actions** 로 가서, 두 곳에 하나씩 넣습니다.
 
-| 칸 | 값 |
-|---|---|
-| Name | `REGISTRY_TOKEN` — 대문자와 밑줄까지 그대로 |
-| Value | 2)에서 만든 토큰 (`package` 가 `Write` 인 것) |
+| 어디 | Name | Value |
+|---|---|---|
+| **Variables** → Add Variable | `REGISTRY_HOST` | `gitea.<도메인>` — 주소창에 보이는 Gitea 주소에서 `https://` 를 뗀 것 |
+| **Secrets** → Add Secret | `REGISTRY_TOKEN` | 2)에서 만든 토큰 (`package` 가 `Write` 인 것) |
 
-> ⚠ **사용자 Settings가 아니라 저장소 Settings 입니다.** 두 곳 모두 Actions →
-> Secrets 메뉴가 있어서 헷갈립니다. 워크플로가 읽는 것은 저장소 쪽입니다.
-> 여기를 빠뜨리면 빌드가 `password is empty` 로 실패합니다.
+예를 들어 Gitea 주소가 `https://gitea.mycompany.com` 이라면 `REGISTRY_HOST` 는
+`gitea.mycompany.com` 입니다. 앞에 `https://` 를 붙이면 안 됩니다.
+
+> ⚠ **사용자 Settings가 아니라 저장소 Settings 입니다.** 두 곳 모두 Actions 메뉴가
+> 있어서 헷갈립니다. 빠뜨리면 빌드가 이렇게 멈춥니다.
+>
+> | 빠진 것 | 나오는 메시지 |
+> |---|---|
+> | `REGISTRY_TOKEN` | `password is empty` |
+> | `REGISTRY_HOST` | `server gave HTTP response to HTTPS client` |
+>
+> 두 번째는 주소를 안 알려 주면 빌드가 **클러스터 내부 주소**를 쓰기 때문입니다.
+> 그 주소는 평문이라 docker가 거부하고, 설령 올라가도 나중에 파드가 그 이름으로는
+> 이미지를 받지 못합니다.
 
 그다음 태그를 밀면 빌드가 시작됩니다.
 

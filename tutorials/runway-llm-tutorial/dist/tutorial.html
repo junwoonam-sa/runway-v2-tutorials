@@ -1612,10 +1612,13 @@ git -c credential.helper= push -u origin main</code></pre></div>
 <p>저장소 화면의 <strong>Actions</strong> 탭을 엽니다. <code>build-image</code> 워크플로가 보이면 <strong>Run workflow</strong> 를 눌러 한 번 돌려 보세요.</p>
 <div class="table-wrap"><table><thead><tr><th>보이는 것</th><th>뜻</th><th>할 일</th></tr></thead><tbody><tr><td>몇 초 안에 로그가 흐르기 시작</td><td>러너 정상</td><td>5)로 갑니다</td></tr><tr><td><code>Waiting for runner…</code> 에서 멈춤</td><td>러너가 자기 이미지를 받지 못함</td><td>폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요</td></tr><tr><td>Actions 탭 자체가 없음</td><td>저장소에서 Actions가 꺼져 있음</td><td>Settings → Repository → Actions 켜기</td></tr></tbody></table></div>
 <h3 id="bot-1-5-이미지-빌드해서-올리기">5) 이미지 빌드해서 올리기</h3>
-<p>먼저 <strong>토큰을 저장소에 등록합니다.</strong> 러너가 레지스트리에 로그인할 때 씁니다.</p>
-<p><strong>저장소 → Settings → Actions → Secrets → Add Secret</strong></p>
-<div class="table-wrap"><table><thead><tr><th>칸</th><th>값</th></tr></thead><tbody><tr><td>Name</td><td><code>REGISTRY_TOKEN</code> — 대문자와 밑줄까지 그대로</td></tr><tr><td>Value</td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
-<aside class="callout warn"><p class="callout-label">주의</p><p><strong>사용자 Settings가 아니라 저장소 Settings 입니다.</strong> 두 곳 모두 Actions → Secrets 메뉴가 있어서 헷갈립니다. 워크플로가 읽는 것은 저장소 쪽입니다. 여기를 빠뜨리면 빌드가 <code>password is empty</code> 로 실패합니다.</p></aside>
+<p>먼저 <strong>저장소에 두 가지를 등록합니다.</strong> 빌드가 레지스트리에 로그인할 때 씁니다.</p>
+<p><strong>저장소 → Settings → Actions</strong> 로 가서, 두 곳에 하나씩 넣습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>어디</th><th>Name</th><th>Value</th></tr></thead><tbody><tr><td><strong>Variables</strong> → Add Variable</td><td><code>REGISTRY_HOST</code></td><td><code>gitea.&lt;도메인&gt;</code> — 주소창에 보이는 Gitea 주소에서 <code>https://</code> 를 뗀 것</td></tr><tr><td><strong>Secrets</strong> → Add Secret</td><td><code>REGISTRY_TOKEN</code></td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
+<p>예를 들어 Gitea 주소가 <code>https://gitea.mycompany.com</code> 이라면 <code>REGISTRY_HOST</code> 는 <code>gitea.mycompany.com</code> 입니다. 앞에 <code>https://</code> 를 붙이면 안 됩니다.</p>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong>사용자 Settings가 아니라 저장소 Settings 입니다.</strong> 두 곳 모두 Actions 메뉴가 있어서 헷갈립니다. 빠뜨리면 빌드가 이렇게 멈춥니다.</p>
+<div class="table-wrap"><table><thead><tr><th>빠진 것</th><th>나오는 메시지</th></tr></thead><tbody><tr><td><code>REGISTRY_TOKEN</code></td><td><code>password is empty</code></td></tr><tr><td><code>REGISTRY_HOST</code></td><td><code>server gave HTTP response to HTTPS client</code></td></tr></tbody></table></div>
+<p>두 번째는 주소를 안 알려 주면 빌드가 <strong>클러스터 내부 주소</strong>를 쓰기 때문입니다. 그 주소는 평문이라 docker가 거부하고, 설령 올라가도 나중에 파드가 그 이름으로는 이미지를 받지 못합니다.</p></aside>
 <p>그다음 태그를 밀면 빌드가 시작됩니다.</p>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git tag v0.1.0
 git push origin v0.1.0</code></pre></div>

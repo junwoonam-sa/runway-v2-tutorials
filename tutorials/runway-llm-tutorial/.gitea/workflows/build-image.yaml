@@ -5,10 +5,14 @@
 #   없습니다). 그래서 이미지를 거기서 만들 수 없습니다. 대신 플랫폼이 미리 깔아 둔
 #   Gitea Actions 러너에 맡깁니다 — 러너에는 도커가 사이드카로 붙어 있습니다.
 #
-# 쓰기 전에 한 번만 해 둘 것:
-#   저장소 Settings → Actions → Secrets → Add Secret
-#     이름: REGISTRY_TOKEN
-#     값 : write:package 스코프가 있는 Gitea 개인 액세스 토큰
+# 쓰기 전에 한 번만 해 둘 것 — 저장소 Settings → Actions 에서 둘을 등록합니다.
+#   Variables → REGISTRY_HOST : gitea.<도메인>      (예: gitea.try.mrxrunway.ai)
+#   Secrets   → REGISTRY_TOKEN: Gitea 개인 액세스 토큰 (package 권한이 Write)
+#
+#   REGISTRY_HOST 를 따로 받는 이유: 워크플로 안에서 얻을 수 있는 서버 주소는
+#   클러스터 내부용(http://gitea-http:3000)이라 평문 HTTP입니다. docker가 거부하고
+#   ("server gave HTTP response to HTTPS client"), 설령 올리더라도 나중에 노드가
+#   그 이름으로는 이미지를 받아오지 못합니다.
 #
 # 실행:
 #   git tag v0.1.0 && git push origin v0.1.0
@@ -33,15 +37,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 등록해 둔 값이 있는지 확인
+        run: |
+          fail=0
+          if [ -z "${{ vars.REGISTRY_HOST }}" ]; then
+            echo "REGISTRY_HOST 변수가 비어 있습니다."
+            echo "  저장소 → Settings → Actions → Variables → Add Variable"
+            echo "    Name : REGISTRY_HOST"
+            echo "    Value: gitea.<도메인>   (주소창에 보이는 Gitea 주소, https:// 없이)"
+            echo
+            fail=1
+          fi
+          if [ -z "${{ secrets.REGISTRY_TOKEN }}" ]; then
+            echo "REGISTRY_TOKEN 시크릿이 비어 있습니다."
+            echo "  저장소 → Settings → Actions → Secrets → Add Secret"
+            echo "    Name : REGISTRY_TOKEN"
+            echo "    Value: Gitea 개인 액세스 토큰 (package 권한이 Write 여야 합니다)"
+            echo
+            fail=1
+          fi
+          if [ "$fail" = "1" ]; then
+            echo "사용자 Settings가 아니라 '저장소' Settings 입니다."
+            exit 1
+          fi
+
       - name: 주소와 태그 정하기
         id: meta
         run: |
-          # 이미지는 이 저장소가 속한 조직 밑으로 갑니다. 프로젝트 조직이어야 합니다 —
-          # 프로젝트가 이미지를 받아올 때 쓰는 자격증명이 조직 봇 계정 것이라,
-          # 개인 계정 밑에 올리면 파드가 ImagePullBackOff 로 멈춥니다.
-          REGISTRY="${GITHUB_SERVER_URL#https://}"
+          # 이미지는 이 저장소가 있는 곳(계정 또는 조직) 밑으로 갑니다.
+          # 개인 계정에 올린다면 저장소를 공개로 두어야 파드가 이미지를 받을 수 있습니다.
           OWNER="${GITHUB_REPOSITORY%%/*}"
-          echo "image=${REGISTRY}/${OWNER}/llm-tutorial" >> "$GITHUB_OUTPUT"
+          echo "image=${{ vars.REGISTRY_HOST }}/${OWNER}/llm-tutorial" >> "$GITHUB_OUTPUT"
 
           if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             echo "tag=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
@@ -49,23 +75,10 @@ jobs:
             echo "tag=0.0.0-${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 토큰이 등록되어 있는지 확인
-        run: |
-          if [ -z "${{ secrets.REGISTRY_TOKEN }}" ]; then
-            echo "REGISTRY_TOKEN 시크릿이 비어 있습니다."
-            echo
-            echo "  저장소 → Settings → Actions → Secrets → Add Secret"
-            echo "    Name : REGISTRY_TOKEN"
-            echo "    Value: Gitea 개인 액세스 토큰 (package 권한이 Write 여야 합니다)"
-            echo
-            echo "사용자 Settings가 아니라 '저장소' Settings 입니다."
-            exit 1
-          fi
-
       - name: 레지스트리 로그인
         run: |
           echo "${{ secrets.REGISTRY_TOKEN }}" \
-            | docker login "${GITHUB_SERVER_URL#https://}" \
+            | docker login "${{ vars.REGISTRY_HOST }}" \
                 --username "${{ github.actor }}" --password-stdin
 
       - name: 빌드와 푸시
