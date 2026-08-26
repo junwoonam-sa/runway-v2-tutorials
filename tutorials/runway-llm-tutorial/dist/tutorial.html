@@ -1609,12 +1609,12 @@ git -c credential.helper= push -u origin main</code></pre></div>
 <p>파일로 저장하는 <code>store</code> 는 권하지 않습니다 — 토큰이 평문으로 남습니다.</p></aside>
 <h3 id="bot-1-4-러너가-살아-있는지-먼저-확인하기">4) 러너가 살아 있는지 먼저 확인하기</h3>
 <p>이미지 빌드를 맡기기 전에, 러너가 실제로 도는지 봅니다. <strong>여기서 막히면 뒤가 전부 막히므로 먼저 확인하는 편이 낫습니다.</strong></p>
-<p>저장소 화면의 <strong>Actions</strong> 탭을 엽니다. <code>build-image</code> 워크플로가 보이면 <strong>Run workflow</strong> 를 눌러 한 번 돌려 보세요.</p>
+<p>저장소 화면의 <strong>Actions</strong> 탭을 엽니다. <code>build-image</code> 워크플로가 보이면 <strong>Run workflow</strong> 를 눌러 한 번 돌려 보세요.</p> <p>지금은 러너가 무조건 실패합니다 걱정 안하셔도 됩니다 실제로 기능이 돌 수 있는지 확인해보는 절차입니다.</p> 
 <div class="table-wrap"><table><thead><tr><th>보이는 것</th><th>뜻</th><th>할 일</th></tr></thead><tbody><tr><td>몇 초 안에 로그가 흐르기 시작</td><td>러너 정상</td><td>5)로 갑니다</td></tr><tr><td><code>Waiting for runner…</code> 에서 멈춤</td><td>러너가 자기 이미지를 받지 못함</td><td>폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요</td></tr><tr><td>Actions 탭 자체가 없음</td><td>저장소에서 Actions가 꺼져 있음</td><td>Settings → Repository → Actions 켜기</td></tr></tbody></table></div>
 <h3 id="bot-1-5-이미지-빌드해서-올리기">5) 이미지 빌드해서 올리기</h3>
 <p>먼저 <strong>저장소에 두 가지를 등록합니다.</strong> 빌드가 레지스트리에 로그인할 때 씁니다.</p>
 <p><strong>저장소 → Settings → Actions</strong> 로 가서, 두 곳에 하나씩 넣습니다.</p>
-<div class="table-wrap"><table><thead><tr><th>어디</th><th>Name</th><th>Value</th></tr></thead><tbody><tr><td><strong>Variables</strong> → Add Variable</td><td><code>REGISTRY_HOST</code></td><td><code>gitea.&lt;도메인&gt;</code> — 주소창에 보이는 Gitea 주소에서 <code>https://</code> 를 뗀 것</td></tr><tr><td><strong>Secrets</strong> → Add Secret</td><td><code>REGISTRY_TOKEN</code></td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>어디</th><th>Name</th><th>Value</th></tr></thead><tbody><tr><td><strong>Variables</strong> → Add Variable</td><td><code>REGISTRY_HOST</code></td><td><code>gitea.&lt;도메인&gt;</code> 주소창에 보이는 Gitea 주소에서 <code>https://</code> 를 뗀 것</td></tr><tr><td><strong>Secrets</strong> → Add Secret</td><td><code>REGISTRY_TOKEN</code></td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
 <p>예를 들어 Gitea 주소가 <code>https://gitea.mycompany.com</code> 이라면 <code>REGISTRY_HOST</code> 는 <code>gitea.mycompany.com</code> 입니다. 앞에 <code>https://</code> 를 붙이면 안 됩니다.</p>
 <aside class="callout warn"><p class="callout-label">주의</p><p><strong>사용자 Settings가 아니라 저장소 Settings 입니다.</strong> 두 곳 모두 Actions 메뉴가 있어서 헷갈립니다. 빠뜨리면 빌드가 이렇게 멈춥니다.</p>
 <div class="table-wrap"><table><thead><tr><th>빠진 것</th><th>나오는 메시지</th></tr></thead><tbody><tr><td><code>REGISTRY_TOKEN</code></td><td><code>password is empty</code></td></tr><tr><td><code>REGISTRY_HOST</code></td><td><code>server gave HTTP response to HTTPS client</code></td></tr></tbody></table></div>
@@ -1634,7 +1634,7 @@ git push origin v0.1.0</code></pre></div>
   repository: &quot;gitea.&lt;도메인&gt;/&lt;계정 또는 조직&gt;/llm-tutorial&quot;
   tag: &quot;0.1.0&quot;</code></pre></div>
 <p>그리고 <strong>이미지를 어디에 올렸느냐에 따라</strong> 아래 한 곳이 갈립니다.</p>
-<div class="table-wrap"><table><thead><tr><th>이미지를 올린 곳</th><th><code>imagePullSecrets</code></th></tr></thead><tbody><tr><td>내 계정 (저장소가 <strong>공개</strong>)</td><td><code>[]</code> — 비워 둡니다. 자격증명이 필요 없습니다</td></tr><tr><td>프로젝트 조직</td><td><code>- name: gitea-image-pull-secret-runway-bot-token</code></td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>이미지를 올린 곳</th><th><code>imagePullSecrets</code></th></tr></thead><tbody><tr><td>내 계정 (저장소가 <strong>공개</strong>)</td><td><code>[]</code> 비워 둡니다. 자격증명이 필요 없습니다</td></tr><tr><td>프로젝트 조직</td><td><code>- name: gitea-image-pull-secret-runway-bot-token</code></td></tr></tbody></table></div>
 <p>내 계정 + 공개인 경우:</p>
 <div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>imagePullSecrets: []</code></pre></div>
 <p><strong>정말로 자격증명 없이 받아지는지 지금 확인해 두면</strong> 배포 때 헤매지 않습니다.</p>
@@ -1642,13 +1642,14 @@ git push origin v0.1.0</code></pre></div>
 <div class="table-wrap"><table><thead><tr><th>나온 값</th><th>뜻</th><th>할 일</th></tr></thead><tbody><tr><td><code>200</code></td><td>익명으로 받아집니다</td><td>그대로 진행</td></tr><tr><td><code>401</code></td><td>아직 비공개입니다</td><td>Gitea → 저장소 → Settings에서 공개로 바꾸세요</td></tr><tr><td><code>404</code></td><td>이미지가 아직 없습니다</td><td>5)의 Actions가 성공했는지 확인</td></tr></tbody></table></div>
 <p><code>401</code> 인 채로 배포하면 파드가 <code>ImagePullBackOff</code> 로 멈춥니다. 메시지만 봐서는 원인이 잘 안 보이는 오류라, 여기서 미리 걸러 두는 편이 낫습니다.</p>
 <h3 id="bot-1-7-차트-올리기">7) 차트 올리기</h3>
-<p>저장소에 들어 있는 스크립트가 묶어서 올려 줍니다. <strong>helm이 없어도 됩니다.</strong></p>
-<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>GITEA_HOST=gitea.&lt;도메인&gt; GITEA_USER=&lt;계정&gt; GITEA_OWNER=&lt;프로젝트 ID&gt; \
-  scripts/package-chart.sh</code></pre></div>
-<p>토큰을 물으면 붙여 넣으세요. 끝나면 마지막 줄에 <strong>등록할 주소</strong>가 나옵니다.</p>
-<div class="code block figure"><pre><code>https://gitea.&lt;도메인&gt;/api/packages/&lt;프로젝트 ID&gt;/helm</code></pre></div>
+<p>이미지는 올렸지만 Runway가 읽는 것은 <strong>차트</strong>입니다. 저장소에 들어 있는 스크립트가 묶어서 올려 줍니다 — <strong>helm이 없어도 됩니다.</strong></p>
+<div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>GITEA_HOST=gitea.&lt;도메인&gt; GITEA_USER=&lt;계정&gt; GITEA_OWNER=&lt;계정 또는 조직&gt;   scripts/package-chart.sh</code></pre></div>
+<p><code>GITEA_OWNER</code> 는 저장소를 만든 곳과 같습니다. 토큰을 물으면 붙여 넣으세요.</p>
+<p>끝나면 마지막 줄에 <strong>등록할 주소</strong>가 나옵니다.</p>
+<div class="code block figure"><pre><code>https://gitea.&lt;도메인&gt;/api/packages/&lt;계정 또는 조직&gt;/helm</code></pre></div>
 <p>이 주소를 <a href="#prep-1">0-1 템플릿 ②</a>의 <code>차트 리포지토리</code> 줄에 적어 두세요. 바로 아래에서 씁니다.</p>
-<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.</strong> Helm 리포지토리는 사람이 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 <code>index.yaml</code> 을 보여 주는데, 거기 <code>entries:</code> 아래에 <code>llm-tutorial</code> 과 버전이 보이면 제대로 올라간 것입니다.</p></aside>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>패키지 화면에 두 개가 보이면 정상입니다.</strong> 계정 페이지(<code>.../-/packages</code>)에 타입이 <code>Container</code> 인 것과 <code>Helm</code> 인 것이 각각 하나씩 생깁니다. 앞은 파드가 실행할 이미지, 뒤는 Runway가 읽을 차트입니다. <strong>등록하는 주소는 Helm 쪽입니다.</strong></p>
+<p><strong>이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.</strong> Helm 리포지토리는 사람이 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 <code>index.yaml</code> 을 보여 주는데, 거기 <code>entries:</code> 아래에 <code>llm-tutorial</code> 과 버전이 보이면 제대로 올라간 것입니다.</p></aside>
 <hr />
 <h2 id="bot-1-애플리케이션-만들기">애플리케이션 만들기</h2>
 <p><strong>애플리케이션(Applications)</strong> → 우측 상단 <strong>+ 생성</strong>.</p>

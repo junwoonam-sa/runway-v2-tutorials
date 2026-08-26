@@ -315,21 +315,27 @@ curl -s -o /dev/null -w "%{http_code}" https://gitea.<도메인>/v2/<계정 또�
 
 ### 7) 차트 올리기
 
-저장소에 들어 있는 스크립트가 묶어서 올려 줍니다. **helm이 없어도 됩니다.**
+이미지는 올렸지만 Runway가 읽는 것은 **차트**입니다. 저장소에 들어 있는 스크립트가
+묶어서 올려 줍니다 — **helm이 없어도 됩니다.**
 
 ```bash
-GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<프로젝트 ID> \
-  scripts/package-chart.sh
+GITEA_HOST=gitea.<도메인> GITEA_USER=<계정> GITEA_OWNER=<계정 또는 조직>   scripts/package-chart.sh
 ```
 
-토큰을 물으면 붙여 넣으세요. 끝나면 마지막 줄에 **등록할 주소**가 나옵니다.
+`GITEA_OWNER` 는 저장소를 만든 곳과 같습니다. 토큰을 물으면 붙여 넣으세요.
+
+끝나면 마지막 줄에 **등록할 주소**가 나옵니다.
 
 ```
-https://gitea.<도메인>/api/packages/<프로젝트 ID>/helm
+https://gitea.<도메인>/api/packages/<계정 또는 조직>/helm
 ```
 
 이 주소를 [0-1 템플릿 ②](../00-preparation/01-keys.md)의 `차트 리포지토리` 줄에
 적어 두세요. 바로 아래에서 씁니다.
+
+> **패키지 화면에 두 개가 보이면 정상입니다.** 계정 페이지(`.../-/packages`)에
+> 타입이 `Container` 인 것과 `Helm` 인 것이 각각 하나씩 생깁니다. 앞은 파드가
+> 실행할 이미지, 뒤는 Runway가 읽을 차트입니다. **등록하는 주소는 Helm 쪽입니다.**
 
 > **이 주소를 브라우저로 열면 404가 나는 것이 정상입니다.** Helm 리포지토리는 사람이
 > 볼 페이지를 갖고 있지 않습니다. 스크립트가 마지막에 `index.yaml` 을 보여 주는데,
