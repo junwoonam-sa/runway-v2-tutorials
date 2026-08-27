@@ -1625,7 +1625,7 @@ curl -s -H &quot;Authorization: Bearer $LLM_API_KEY&quot; http://litellm.runway-
 <h3 id="bot-1-5-등록해-두기-값-세-개">5) 등록해 두기 — 값 세 개</h3>
 <p>빌드가 레지스트리에 로그인하고, 이미지와 차트를 어디에 올릴지 정하는 값들입니다.</p>
 <p><strong>저장소 → Settings → Actions</strong></p>
-<div class="table-wrap"><table><thead><tr><th>어디</th><th>Name</th><th>Value</th></tr></thead><tbody><tr><td><strong>Variables</strong></td><td><code>REGISTRY_HOST</code></td><td><code>gitea.&lt;도메인&gt;</code> — 주소창의 Gitea 주소에서 <code>https://</code> 를 뗀 것</td></tr><tr><td><strong>Variables</strong></td><td><code>REGISTRY_OWNER</code></td><td><strong>프로젝트 ID</strong> — 이미지를 올릴 곳</td></tr><tr><td><strong>Secrets</strong></td><td><code>REGISTRY_TOKEN</code></td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>어디</th><th>Name</th><th>Value</th></tr></thead><tbody><tr><td><strong>Variables</strong></td><td><code>REGISTRY_HOST</code></td><td><code>gitea.&lt;도메인&gt;</code> 주소창의 Gitea 주소에서 <code>https://</code> 를 뗀 것</td></tr><tr><td><strong>Variables</strong></td><td><code>REGISTRY_OWNER</code></td><td><strong>프로젝트 ID</strong></td></tr><tr><td><strong>Secrets</strong></td><td><code>REGISTRY_TOKEN</code></td><td>2)에서 만든 토큰 (<code>package</code> 가 <code>Write</code> 인 것)</td></tr></tbody></table></div>
 <aside class="callout warn"><p class="callout-label">주의</p><p><strong>사용자 Settings가 아니라 저장소 Settings 입니다.</strong> 두 곳 모두 Actions 메뉴가 있어서 헷갈립니다. 빠뜨리면 빌드가 이렇게 멈춥니다.</p>
 <div class="table-wrap"><table><thead><tr><th>빠진 것</th><th>나오는 메시지</th></tr></thead><tbody><tr><td><code>REGISTRY_TOKEN</code></td><td><code>password is empty</code></td></tr><tr><td><code>REGISTRY_HOST</code></td><td><code>server gave HTTP response to HTTPS client</code></td></tr></tbody></table></div>
 <p><strong>이미지는 프로젝트 조직에, 차트는 아무 데나.</strong> 이미지는 노드가 프로젝트의 봇 자격증명으로 받아 가는데 그 봇이 개인 계정을 못 읽습니다. 차트는 Argo CD가 <strong>내 자격증명</strong>으로 읽으니 개인 계정이어도 됩니다. 차트를 다른 곳에 올리고 싶으면 <code>CHART_OWNER</code> 변수를 추가하세요 — 비워 두면 이 저장소가 있는 곳입니다.</p></aside>
@@ -1669,10 +1669,10 @@ git tag v0.1.0 &amp;&amp; git push origin v0.1.0</code></pre></div>
 <p>예: <code>https://llm-chat-my-project.mycompany.com</code></p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p>이 주소는 5단계에서 실제로 열 주소입니다. 지금은 적어만 두고, 3단계에서는 외부 접근을 꺼 둔 채로 확인합니다.</p></aside>
 <hr />
-<h2 id="bot-1-values.yaml-수정-차트의-빈칸-채우기">values.yaml 수정 — 차트의 빈칸 채우기</h2>
+<h2 id="bot-1-values.yaml-수정-차트의-빈칸-채우기">values.yaml 수정</h2>
 <p>여기가 <a href="#runway">소개에서 말한 &quot;빈칸&quot;</a>입니다. 차트는 설치 설명서이고, <code>values.yaml</code> 은 사람마다 다른 값을 채우는 자리입니다.</p>
 <p><strong>헬름 차트</strong> 영역은 기본으로 <strong>폼</strong> 탭이 열려 있습니다. <strong>YAML</strong> 탭을 선택한 뒤, 아래 네 곳만 내 값으로 바꿉니다.</p>
-<aside class="callout note"><p class="callout-label">알아 둘 것</p><p>여기 적는 값은 <strong>비밀이 아닌 것들</strong>입니다 — PVC 이름, Qdrant 주소, 엔진 이름. 비밀(<code>LLM_API_KEY</code>)은 0-2에서 OpenBao에 넣었고 여기 적지 않습니다. 왜 그렇게 나뉘는지는 <a href="#prep-2">0-2의 설명</a>에 있습니다.</p></aside>
+<aside class="callout note"><p class="callout-label">알아 둘 것</p><p>여기 적는 값은 <strong>비밀이 아닌 것들</strong>입니다. 예를 들어, PVC 이름, Qdrant 주소, 엔진 이름. 비밀(<code>LLM_API_KEY</code>)은 0-2에서 OpenBao에 넣었고 여기 적지 않습니다. 왜 그렇게 나뉘는지는 <a href="#prep-2">0-2의 설명</a>에 있습니다.</p></aside>
 <div class="code block"><span class="code-lang">yaml</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>runway:
   openbao:
     secretEngine: &quot;tutorial&quot;        # 템플릿 ②의 &#x27;시크릿 엔진&#x27;
@@ -1772,7 +1772,6 @@ securityContext:
     drop:
       - ALL
 
-imagePullSecrets: []
 nameOverride: &quot;&quot;
 fullnameOverride: &quot;&quot;
 extraEnv: []
@@ -1781,7 +1780,7 @@ nodeSelector: {}
 tolerations: []
 affinity: {}</code></pre></div>
 <p><code>vector.url</code> 의 <code>&lt;프로젝트 ID&gt;</code> 한 곳만 내 값으로 바꿉니다.</p>
-<aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>이미지 주소와 태그는 여기 없습니다.</strong> 차트를 만들 때 이미 박아 두었기 때문입니다 (3-1의 6단계). 여기에 또 적을 필요가 없습니다.</p>
+<aside class="callout warn"><p class="callout-label">주의</p><p><strong><code>image:</code> 와 <code>imagePullSecrets:</code> 를 여기 적지 마세요.</strong> 차트를 만들 때 이미 박아 넣었습니다. 여기 적으면 <strong>그 값을 덮어씁니다</strong> — 옛 태그를 적어 두면 새로 빌드한 이미지가 아니라 옛 이미지가 계속 뜨고, 증상은 &quot;고쳤는데 반영이 안 된다&quot;로 나타납니다. 코드를 고쳤을 때는 태그를 올려 다시 빌드하고, 애플리케이션에서 <strong>차트 버전만</strong> 새 것으로 바꾸면 됩니다.</p>
 <p>⚠ <strong>덧붙이지 말고 지우고 넣으세요.</strong> 같은 키가 두 번 있으면 YAML은 <strong>뒤에 나온 것을</strong> 씁니다. 앞에 적은 값이 오류 없이 무시되고, 증상은 &quot;설정했는데 동작하지 않는다&quot;로 나타납니다.</p>
 <p><strong><code>provider: &quot;auto&quot;</code> 를 그대로 두면 됩니다.</strong> 게이트웨이에 임베딩 모델이 있으면 그쪽을 쓰고, 없으면 앱에서 계산합니다. 어느 쪽을 골랐는지는 상태 화면의 임베딩 항목에 표시됩니다.</p>
 <p>볼륨(<code>storage.enabled: true</code>)은 켜 두세요. 앱에서 계산할 때 받은 모델 가중치를 거기에 저장하고, 그래야 파드가 재시작해도 다시 받지 않습니다.</p></aside>
@@ -1814,7 +1813,6 @@ affinity: {}</code></pre></div>
     <p class="chapter-blurb">무엇이 준비됐는지 화면에서 읽기</p>
   </header>
   <div class="prose"><p>챗봇 화면을 열고, 무엇이 준비됐는지 확인합니다.</p>
-<p>걸리는 시간 10분.</p>
 <hr />
 <h2 id="bot-2-열어-보기">열어 보기</h2>
 <p>3-1에서 외부 접근을 켜지 않았습니다. 그래서 아직 인터넷 주소가 없습니다. 주소를 여는 것은 5단계에서 비밀번호를 건 다음에 합니다. 그때까지는 <strong>내 화면에서만 잠깐 연결해서</strong> 봅니다.</p>
@@ -1888,7 +1886,6 @@ affinity: {}</code></pre></div>
     <p class="chapter-blurb">벡터 DB에 문서 넣기</p>
   </header>
   <div class="prose"><p>내 문서를 벡터 DB에 넣습니다.</p>
-<p>걸리는 시간 10분.</p>
 <hr />
 <h2 id="use-2-올리기">올리기</h2>
 <p>화면 오른쪽 위 <strong>문서</strong> 버튼 → <strong>파일 올리기</strong>.</p>
@@ -1936,7 +1933,7 @@ affinity: {}</code></pre></div>
     <p class="chapter-blurb">스스로 판단해서 도구를 부르는 것</p>
   </header>
   <div class="prose"><p>챗봇이 <strong>스스로 판단해서</strong> 문서를 뒤지는 것을 봅니다.</p>
-<p>걸리는 시간 10분. 이 튜토리얼에서 가장 볼 만한 부분입니다.</p>
+<p>이 튜토리얼에서 가장 볼 만한 부분입니다.</p>
 <hr />
 <h2 id="use-3-물어보기">물어보기</h2>
 <p>4-2에서 올린 문서 안에 있는 내용을 물어보세요.</p>
@@ -2001,7 +1998,6 @@ affinity: {}</code></pre></div>
     <p class="chapter-blurb">보안 고지, 비밀번호, 주소 열기</p>
   </header>
   <div class="prose"><p>지금은 나만 볼 수 있습니다. 팀원들도 쓰게 하는 방법입니다.</p>
-<p>걸리는 시간 10분.</p>
 <hr />
 <h2 id="share-1-먼저-읽어야-할-것">먼저 읽어야 할 것</h2>
 <aside class="callout warn"><p class="callout-label">주의</p><p><strong>애플리케이션 주소 앞에는 로그인이 붙지 않습니다.</strong></p>
@@ -2277,7 +2273,7 @@ scripts/run-local.sh</code></pre></div>
 <p>터미널에서 (3-1의 3단계):</p>
 <div class="table-wrap"><table><thead><tr><th>이런 메시지가 나오면</th><th>원인</th><th>할 일</th></tr></thead><tbody><tr><td><code>Author identity unknown</code></td><td>git에 사용자 정보가 없음</td><td><code>git config --global user.email &quot;…&quot;</code> 과 <code>user.name &quot;…&quot;</code></td></tr><tr><td><code>src refspec main does not match any</code></td><td>커밋이 하나도 없음 (위 오류의 결과)</td><td>위를 먼저 하고 <code>git add -A &amp;&amp; git commit -m &quot;…&quot;</code></td></tr><tr><td><code>Missing or invalid credentials</code> + <code>ECONNREFUSED …vscode-git.sock</code></td><td>Code Server의 로그인 창을 터미널이 쓸 수 없음</td><td><code>unset GIT_ASKPASS VSCODE_GIT_ASKPASS_NODE VSCODE_GIT_ASKPASS_MAIN VSCODE_GIT_IPC_HANDLE</code> 뒤 <code>git -c credential.helper= push -u origin main</code></td></tr><tr><td><code>Authentication failed</code></td><td>Password 칸에 계정 비밀번호를 넣음</td><td>그 칸에는 <strong>토큰</strong>을 넣습니다 (3-1의 2단계)</td></tr><tr><td><code>Permission denied</code> (스크립트 실행 시)</td><td>끌어다 놓은 파일에는 실행 권한이 없음</td><td>앞에 <code>bash</code> 를 붙여 실행하세요 — <code>bash scripts/package-chart.sh</code></td></tr></tbody></table></div>
 <p>Actions 화면에서 (3-1의 4~5단계):</p>
-<div class="table-wrap"><table><thead><tr><th>이런 메시지가 나오면</th><th>원인</th><th>할 일</th></tr></thead><tbody><tr><td><code>Waiting for runner…</code> 에서 안 움직임</td><td>러너가 자기 이미지를 받지 못함</td><td>폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요</td></tr><tr><td><code>password is empty</code></td><td><code>REGISTRY_TOKEN</code> 시크릿이 없음</td><td>저장소 → Settings → Actions → <strong>Secrets</strong></td></tr><tr><td><code>server gave HTTP response to HTTPS client</code></td><td><code>REGISTRY_HOST</code> 변수가 없음</td><td>저장소 → Settings → Actions → <strong>Variables</strong> 에 <code>gitea.&lt;도메인&gt;</code></td></tr><tr><td><code>authGroup.Verify</code></td><td>토큰에 패키지 권한이 없음</td><td>토큰을 다시 만들면서 <code>package</code> 를 <code>Write</code> 로</td></tr><tr><td>빌드는 됐는데 배포에서 <code>ImagePullBackOff</code> (<code>401</code>)</td><td>이미지가 개인 계정에 올라감</td><td><code>REGISTRY_OWNER</code> 변수에 프로젝트 ID를 넣고 태그를 올려 다시 빌드 (3-1의 5단계)</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>이런 메시지가 나오면</th><th>원인</th><th>할 일</th></tr></thead><tbody><tr><td><code>Waiting for runner…</code> 에서 안 움직임</td><td>러너가 자기 이미지를 받지 못함</td><td>폐쇄망에서 미러가 설정되지 않은 경우입니다. 플랫폼 담당자에게 문의하세요</td></tr><tr><td><code>password is empty</code></td><td><code>REGISTRY_TOKEN</code> 시크릿이 없음</td><td>저장소 → Settings → Actions → <strong>Secrets</strong></td></tr><tr><td><code>server gave HTTP response to HTTPS client</code></td><td><code>REGISTRY_HOST</code> 변수가 없음</td><td>저장소 → Settings → Actions → <strong>Variables</strong> 에 <code>gitea.&lt;도메인&gt;</code></td></tr><tr><td><code>authGroup.Verify</code></td><td>토큰에 패키지 권한이 없음</td><td>토큰을 다시 만들면서 <code>package</code> 를 <code>Write</code> 로</td></tr><tr><td>빌드는 됐는데 배포에서 <code>ImagePullBackOff</code> (<code>401</code>)</td><td>이미지가 개인 계정에 올라감</td><td><code>REGISTRY_OWNER</code> 변수에 프로젝트 ID를 넣고 태그를 올려 다시 빌드 (3-1의 5단계)</td></tr><tr><td>새로 빌드했는데 옛 동작 그대로</td><td>애플리케이션 values에 <code>image:</code> 가 남아 있어 차트에 박힌 값을 덮어씀</td><td>콘솔 YAML에서 <code>image:</code> 와 <code>imagePullSecrets:</code> 블록을 지우고 차트 버전만 새 것으로</td></tr></tbody></table></div>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>사용자 Settings가 아니라 저장소 Settings 입니다.</strong> 두 곳 모두 Actions 메뉴가 있어서, 엉뚱한 곳에 등록해 두고 왜 안 되는지 찾게 됩니다.</p></aside>
 <hr />
 <h2 id="app-c-3단계-챗봇-배포">3단계 — 챗봇 배포</h2>

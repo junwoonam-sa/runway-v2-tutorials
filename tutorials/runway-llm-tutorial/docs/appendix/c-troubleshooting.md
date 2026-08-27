@@ -81,6 +81,7 @@ Actions 화면에서 (3-1의 4~5단계):
 | `server gave HTTP response to HTTPS client` | `REGISTRY_HOST` 변수가 없음 | 저장소 → Settings → Actions → **Variables** 에 `gitea.<도메인>` |
 | `authGroup.Verify` | 토큰에 패키지 권한이 없음 | 토큰을 다시 만들면서 `package` 를 `Write` 로 |
 | 빌드는 됐는데 배포에서 `ImagePullBackOff` (`401`) | 이미지가 개인 계정에 올라감 | `REGISTRY_OWNER` 변수에 프로젝트 ID를 넣고 태그를 올려 다시 빌드 (3-1의 5단계) |
+| 새로 빌드했는데 옛 동작 그대로 | 애플리케이션 values에 `image:` 가 남아 있어 차트에 박힌 값을 덮어씀 | 콘솔 YAML에서 `image:` 와 `imagePullSecrets:` 블록을 지우고 차트 버전만 새 것으로 |
 
 > **사용자 Settings가 아니라 저장소 Settings 입니다.** 두 곳 모두 Actions 메뉴가
 > 있어서, 엉뚱한 곳에 등록해 두고 왜 안 되는지 찾게 됩니다.
