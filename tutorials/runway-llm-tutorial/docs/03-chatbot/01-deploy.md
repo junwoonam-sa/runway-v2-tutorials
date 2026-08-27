@@ -283,7 +283,8 @@ git add -A && git commit -m "설정 반영" && git push
 git tag v0.1.0 && git push origin v0.1.0
 ```
 
-Actions 탭에서 진행이 보입니다. 태그 하나로 네 가지가 일어납니다.
+Actions 탭에서 진행이 보입니다. **아래 네 가지는 워크플로가 대신 합니다** — 직접
+할 일은 없고, 무엇이 일어나는지만 알아 두면 됩니다.
 
 1. `app/` 을 이미지로 빌드해 올림
 2. 그 이미지 주소와 태그를 `chart/values.yaml` 에 박아 넣음
