@@ -51,20 +51,27 @@ class Agent:
             return "none"
         return "retrieval-fallback" if self.tools_unsupported else "tool-calling"
 
-    def build_messages(self, history: list[dict]) -> list[dict]:
+    def build_messages(self, history: list[dict], user_prompt: str = "") -> list[dict]:
         """대화 앞에 시스템 프롬프트를 답니다. 순서는 고정입니다.
 
         배포가 정한 프롬프트가 항상 먼저이고 사용자가 지울 수 없어야, 그것이 기본값이
         아니라 가드레일로 기능합니다.
+
+        화면에서 적은 지시(`user_prompt`)는 **그 뒤에** 붙습니다. 앞에 두거나 대체하게
+        하면 배포가 정한 규칙을 화면에서 무력화할 수 있게 됩니다. 뒤에 두면 말투나
+        형식처럼 겹치지 않는 것은 그대로 반영되고, 정면으로 충돌하는 지시는 앞의 것이
+        기준으로 남습니다.
         """
         messages: list[dict] = []
         if self._settings.system_prompt:
             messages.append({"role": "system", "content": self._settings.system_prompt})
+        if user_prompt.strip():
+            messages.append({"role": "system", "content": user_prompt.strip()})
         messages.extend(history[-self._settings.max_history_messages :])
         return messages
 
-    async def run(self, history: list[dict]) -> AsyncIterator[dict]:
-        messages = self.build_messages(history)
+    async def run(self, history: list[dict], user_prompt: str = "") -> AsyncIterator[dict]:
+        messages = self.build_messages(history, user_prompt)
 
         if self.tools_unsupported and self._toolbox.available:
             async for item in self._prepend_retrieval(messages, history):
@@ -91,7 +98,7 @@ class Agent:
                 logger.warning("게이트웨이가 tools를 거부 → 검색 주입 방식으로 전환합니다: %s", exc)
                 self.tools_unsupported = True
                 yield event("mode", mode=self.tool_mode)
-                messages = self.build_messages(history)
+                messages = self.build_messages(history, user_prompt)
                 async for item in self._prepend_retrieval(messages, history):
                     yield item
                 continue

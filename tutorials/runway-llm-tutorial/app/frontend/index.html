@@ -19,6 +19,7 @@
         <span class="state-dot" id="status-dot-badge"></span>
         <span id="status-label">확인 중…</span>
       </button>
+      <button id="prompt-toggle" class="ghost">지시</button>
       <button id="docs-toggle" class="ghost">문서</button>
     </div>
   </header>
@@ -44,6 +45,29 @@
         </p>
       </div>
     </section>
+
+    <!--
+      지시(시스템 프롬프트) 패널. 값은 이 브라우저에만 저장되고, 보낼 때마다 요청에
+      함께 실립니다 — 서버는 상태를 갖지 않습니다. 배포가 정한 프롬프트는 그대로
+      앞에 남고 이 지시는 그 뒤에 붙습니다(agent.build_messages 참고).
+    -->
+    <aside id="prompt-panel" class="docs hidden" aria-label="지시">
+      <h2>어시스턴트에게 지시</h2>
+      <p class="muted small">
+        말투나 답변 형식처럼 매번 반복해서 시키던 것을 여기 적어 두면, 보낼 때마다
+        함께 전달됩니다.
+      </p>
+      <textarea id="prompt-input" class="prompt-input" rows="8"
+        placeholder="예) 답은 세 문장 안으로. 문서에 없으면 없다고 말할 것. 존댓말."></textarea>
+      <div class="prompt-actions">
+        <button id="prompt-save" type="button" class="button">저장</button>
+        <button id="prompt-clear" type="button" class="ghost small-btn">지우기</button>
+        <span class="muted small" id="prompt-count"></span>
+      </div>
+      <p class="muted small" id="prompt-note">
+        이 브라우저에만 저장됩니다. 다른 사람에게는 적용되지 않고, 서버에도 남지 않습니다.
+      </p>
+    </aside>
 
     <aside id="docs-panel" class="docs hidden" aria-label="문서">
       <h2>색인된 문서</h2>

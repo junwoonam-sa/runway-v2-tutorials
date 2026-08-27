@@ -16,8 +16,12 @@ const state = {
   history: [],
   streaming: false,
   password: sessionStorage.getItem("accessPassword") || "",
+  // 화면에서 적은 지시. 이 브라우저에만 남습니다 — 서버는 상태를 갖지 않습니다.
+  systemPrompt: localStorage.getItem("systemPrompt") || "",
   controller: null,
 };
+
+const MAX_PROMPT_CHARS = 4000;   // 서버의 schemas.MAX_SYSTEM_PROMPT_CHARS 와 같은 값
 
 const el = {
   chat: document.getElementById("chat"),
@@ -30,6 +34,12 @@ const el = {
   toolMode: document.getElementById("tool-mode"),
   statusDot: document.getElementById("status-dot"),
   docsToggle: document.getElementById("docs-toggle"),
+  promptToggle: document.getElementById("prompt-toggle"),
+  promptPanel: document.getElementById("prompt-panel"),
+  promptInput: document.getElementById("prompt-input"),
+  promptSave: document.getElementById("prompt-save"),
+  promptClear: document.getElementById("prompt-clear"),
+  promptCount: document.getElementById("prompt-count"),
   statusToggle: document.getElementById("status-toggle"),
   statusPanel: document.getElementById("status-panel"),
   statusList: document.getElementById("status-list"),
@@ -126,7 +136,7 @@ async function send(text) {
     const response = await fetch("./api/chat", {
       method: "POST",
       headers: headers({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ messages: state.history }),
+      body: JSON.stringify({ messages: state.history, systemPrompt: state.systemPrompt }),
       signal: state.controller.signal,
     });
 
@@ -355,8 +365,55 @@ el.input.addEventListener("input", () => {
 el.stop.addEventListener("click", () => state.controller?.abort());
 
 el.docsToggle.addEventListener("click", () => {
+  el.promptPanel.classList.add("hidden");          // 두 패널은 같은 자리를 씁니다
   el.docsPanel.classList.toggle("hidden");
   if (!el.docsPanel.classList.contains("hidden")) refreshDocuments();
+});
+
+/* ------------------------------------------------------------ 지시(프롬프트) */
+
+function renderPromptCount() {
+  const n = el.promptInput.value.length;
+  el.promptCount.textContent = `${n} / ${MAX_PROMPT_CHARS}`;
+  el.promptCount.style.color = n > MAX_PROMPT_CHARS ? "var(--danger)" : "";
+  el.promptSave.disabled = n > MAX_PROMPT_CHARS;
+}
+
+function markPromptState(saved) {
+  // 지시가 걸려 있으면 버튼에 표시합니다. 접힌 패널 안의 설정은 잊히기 쉽습니다 —
+  // 답이 이상할 때 여기를 먼저 의심할 수 있어야 합니다.
+  el.promptToggle.textContent = state.systemPrompt ? "지시 ●" : "지시";
+  el.promptToggle.title = state.systemPrompt ? "이 브라우저에 지시가 저장되어 있습니다" : "";
+  if (saved !== undefined) {
+    el.promptSave.textContent = saved ? "저장됨" : "저장";
+    if (saved) setTimeout(() => (el.promptSave.textContent = "저장"), 1200);
+  }
+}
+
+el.promptToggle.addEventListener("click", () => {
+  el.docsPanel.classList.add("hidden");
+  el.promptPanel.classList.toggle("hidden");
+  if (!el.promptPanel.classList.contains("hidden")) {
+    el.promptInput.value = state.systemPrompt;
+    renderPromptCount();
+    el.promptInput.focus();
+  }
+});
+
+el.promptInput.addEventListener("input", renderPromptCount);
+
+el.promptSave.addEventListener("click", () => {
+  state.systemPrompt = el.promptInput.value.slice(0, MAX_PROMPT_CHARS);
+  localStorage.setItem("systemPrompt", state.systemPrompt);
+  markPromptState(true);
+});
+
+el.promptClear.addEventListener("click", () => {
+  state.systemPrompt = "";
+  localStorage.removeItem("systemPrompt");
+  el.promptInput.value = "";
+  renderPromptCount();
+  markPromptState(true);
 });
 
 el.fileInput.addEventListener("change", (event) => {
@@ -369,5 +426,6 @@ document.querySelector(".upload .button").addEventListener("click", () => el.fil
 el.statusToggle.addEventListener("click", () => openStatus(el.statusPanel.classList.contains("hidden")));
 el.statusRefresh.addEventListener("click", () => loadStatus());
 
+markPromptState();
 loadConfig();
 loadStatus({ autoOpen: true });

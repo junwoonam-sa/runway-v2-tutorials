@@ -246,3 +246,24 @@ dialog input {
 @media (max-width: 720px) {
   .docs { position: fixed; inset: 52px 0 0 0; width: auto; z-index: 5; }
 }
+
+/* 지시(시스템 프롬프트) 패널 — 문서 패널과 같은 자리에 번갈아 뜹니다. */
+.prompt-input {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.5;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+.prompt-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.prompt-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 4px;
+}
+.prompt-actions .muted { margin-left: auto; }

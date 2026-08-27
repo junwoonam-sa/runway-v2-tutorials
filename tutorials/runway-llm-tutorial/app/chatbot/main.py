@@ -188,7 +188,7 @@ async def chat(request: ChatRequest):
 
     async def stream():
         try:
-            async for item in agent.run(history):
+            async for item in agent.run(history, request.system_prompt):
                 yield sse(item)
         except Exception as exc:                            # noqa: BLE001
             logger.exception("chat turn failed")

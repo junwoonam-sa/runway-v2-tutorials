@@ -64,8 +64,8 @@ class FakeToolbox:
         return self.result
 
 
-async def collect(agent, history):
-    return [event async for event in agent.run(history)]
+async def collect(agent, history, user_prompt=""):
+    return [event async for event in agent.run(history, user_prompt)]
 
 
 async def test_plain_answer_streams_tokens():
@@ -153,3 +153,31 @@ async def test_tool_loop_stops_at_the_configured_ceiling():
 
     assert events[-1]["type"] == "error"
     assert "2회" in events[-1]["message"]
+
+
+async def test_user_prompt_comes_after_the_deployment_prompt():
+    """화면에서 적은 지시는 배포가 정한 프롬프트를 대체하지 않고 뒤에 붙습니다.
+
+    앞에 두거나 대체하게 하면, 배포가 건 가드레일을 화면에서 무력화할 수 있습니다.
+    """
+    llm = FakeLLM([[Chunk(text="네"), Chunk(finish_reason="stop")]])
+    agent = Agent(make_settings(), llm, FakeToolbox(tools=()))
+
+    await collect(agent, [{"role": "user", "content": "안녕"}], user_prompt="세 문장 안으로 답할 것")
+
+    messages = llm.calls[0]["messages"]
+    assert messages[0]["role"] == "system"
+    assert messages[0]["content"] == "너는 튜토리얼 도우미다."
+    assert messages[1] == {"role": "system", "content": "세 문장 안으로 답할 것"}
+    assert messages[2]["role"] == "user"
+
+
+async def test_empty_user_prompt_adds_nothing():
+    """비어 있거나 공백뿐이면 메시지를 늘리지 않습니다 — 매 요청의 낭비입니다."""
+    llm = FakeLLM([[Chunk(text="네"), Chunk(finish_reason="stop")]])
+    agent = Agent(make_settings(), llm, FakeToolbox(tools=()))
+
+    await collect(agent, [{"role": "user", "content": "안녕"}], user_prompt="   ")
+
+    roles = [m["role"] for m in llm.calls[0]["messages"]]
+    assert roles == ["system", "user"]
