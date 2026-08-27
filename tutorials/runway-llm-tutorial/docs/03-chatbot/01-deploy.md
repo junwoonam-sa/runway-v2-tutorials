@@ -462,15 +462,17 @@ runway:
     existingClaim: "llm-tutorial-data"
     mountPath: /data
 
+  # 주소 앞에 플랫폼 로그인이 없습니다. 비밀번호를 켜 둡니다.
   access:
-    passwordRequired: false   # 5단계에서 켭니다
+    passwordRequired: true
 
   certs:
     enabled: false            # 사설 인증서 설치본에서만 켭니다
 
   httpRoute:
-    enabled: false            # 5단계에서 켭니다
-    hostnames: []
+    enabled: true
+    hostnames:
+      - "llm-chat-<프로젝트 ID>.<도메인>"   # ← 바꾸세요. 전부 소문자
     targetPort: 80
     path: /
     gateway:
@@ -514,7 +516,13 @@ tolerations: []
 affinity: {}
 ```
 
-`vector.url` 의 `<프로젝트 ID>` 한 곳만 내 값으로 바꿉니다.
+**두 곳**을 내 값으로 바꿉니다 — `vector.url` 의 `<프로젝트 ID>`, 그리고
+`httpRoute.hostnames` 의 주소입니다. 호스트명은 위 「애플리케이션 열기 링크」에
+적은 것과 **같아야** 합니다.
+
+> **비밀번호가 필요합니다.** `passwordRequired: true` 이므로 OpenBao의 `llmchat` 에
+> `ACCESS_PASSWORD` 가 들어 있어야 합니다(0-2에서 넣었습니다). 없으면 배포가
+> 거부되면서 그 이유를 말해 줍니다.
 
 > ⚠ **`image:` 와 `imagePullSecrets:` 를 여기 적지 마세요.** 차트를 만들 때 이미
 > 박아 넣었습니다. 여기 적으면 **그 값을 덮어씁니다** — 옛 태그를 적어 두면 새로
