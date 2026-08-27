@@ -1631,8 +1631,8 @@ curl -s -H &quot;Authorization: Bearer $LLM_API_KEY&quot; http://litellm.runway-
 <h3 id="bot-1-6-태그를-밀면-나머지는-자동입니다">6) 태그 설정</h3>
 <div class="code block"><span class="code-lang">bash</span><button class="copy" type="button" aria-label="복사">복사</button><pre><code>git add -A &amp;&amp; git commit -m &quot;설정 반영&quot; &amp;&amp; git push
 git tag v0.1.0 &amp;&amp; git push origin v0.1.0</code></pre></div>
-<p>Actions 탭에서 진행이 보입니다. <strong>아래 네 가지는 워크플로가 대신 합니다</strong> — 직접 할 일은 없고, 무엇이 일어나는지만 알아 두면 됩니다.</p>
-<ol><li><code>app/</code> 을 이미지로 빌드해 올림</li><li>그 이미지 주소와 태그를 <code>chart/values.yaml</code> 에 박아 넣음</li><li>차트 버전을 태그와 같게 맞춤</li><li>차트를 묶어 Helm 레지스트리에 올림</li></ol>
+<p>Actions 탭에서 진행이 보입니다. <strong>아래 네 가지는 워크플로가 대신 합니다</strong> <br>유저는, 어떤 작업들이 일어나는지만 알아 두면 됩니다.</p>
+<ol><li><code>app/</code> 을 이미지로 빌드해 올림</li><li>그 이미지 주소와 태그를 <code>chart/values.yaml</code> 에 추가</li><li>차트 버전을 태그와 같게 맞춤</li><li>차트를 묶어 Helm 레지스트리에 올림</li></ol>
 <p>로그 마지막에 등록할 주소와 차트 버전이 나옵니다.</p>
 <div class="code block figure"><pre><code>애플리케이션 생성 폼에 넣을 리포지토리 URL:
   https://gitea.&lt;도메인&gt;/api/packages/&lt;계정 또는 조직&gt;/helm
@@ -1640,7 +1640,7 @@ git tag v0.1.0 &amp;&amp; git push origin v0.1.0</code></pre></div>
 <p>이 주소를 <a href="#prep-1">0-1 템플릿 ②</a>의 <code>차트 리포지토리</code> 줄에 적어 두세요. 바로 아래에서 씁니다.</p>
 <aside class="callout note"><p class="callout-label">알아 둘 것</p><p><strong>고칠 때마다 태그를 올리세요.</strong> <code>v0.1.1</code>, <code>v0.1.2</code> … 같은 태그를 다시 쓰면 두 곳에서 막힙니다. 노드는 이미 받아 둔 이미지를 다시 받지 않고, Helm 레지스트리는 같은 차트 버전을 덮어쓰지 않습니다(<code>409</code>).</p>
 <p><strong>패키지가 두 개 생기면 정상입니다.</strong> 계정 페이지(<code>.../-/packages</code>)에 타입이 <code>Container</code> 인 것과 <code>Helm</code> 인 것이 하나씩 보입니다. 앞은 파드가 실행할 이미지, 뒤는 Runway가 읽을 차트입니다. <strong>등록하는 주소는 Helm 쪽입니다.</strong></p>
-<p><strong>직접 올리고 싶다면</strong> 저장소의 <code>scripts/package-chart.sh</code> 가 차트만 따로 묶어 올립니다 — <code>bash scripts/package-chart.sh</code>. 워크플로가 하는 일과 같습니다.</p></aside>
+<p><strong>직접 올리고 싶다면</strong> 저장소의 <code>scripts/package-chart.sh</code> 가 차트만 따로 묶어 올립니다. <code>bash scripts/package-chart.sh</code>. 워크플로가 하는 일과 같습니다.</p></aside>
 <hr />
 <h2 id="bot-1-애플리케이션-만들기">애플리케이션 만들기</h2>
 <p><strong>애플리케이션(Applications)</strong> → 우측 상단 <strong>+ 생성</strong>.</p>
@@ -1826,7 +1826,7 @@ affinity: {}</code></pre></div>
 <div class="table-wrap"><table><thead><tr><th>배지</th><th>뜻</th></tr></thead><tbody><tr><td>🟢 <strong>준비됨</strong></td><td>전부 정상입니다</td></tr><tr><td>🟡 <strong>확인 필요</strong></td><td>대화는 되지만 일부 기능이 꺼져 있습니다</td></tr><tr><td>🔴 <strong>문제 있음</strong></td><td>대화를 시작할 수 없습니다</td></tr></tbody></table></div>
 <p><strong>문제가 있으면 화면이 저절로 펼쳐집니다.</strong> 무엇이 잘못됐는지와 <strong>어떻게 고치는지</strong>가 항목마다 적혀 있습니다. 로그를 볼 필요가 없습니다.</p>
 <p>전부 정상이면 이렇게 보입니다.</p>
-<div class="code block figure"><pre><code>  ● LLM API 키          키가 주입되어 있습니다.
+<div class="code block figure"><pre><code>  ● LLM API 키         키가 주입되어 있습니다.
   ● LLM 게이트웨이      연결됨. 모델 {n}개가 있습니다.
   ● 사용 중인 모델      openai/gpt-oss-120b
   ● 도구 서버 (MCP)     도구 5개가 준비되어 있습니다.
