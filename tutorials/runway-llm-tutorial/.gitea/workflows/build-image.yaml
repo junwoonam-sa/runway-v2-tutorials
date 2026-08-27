@@ -1,6 +1,6 @@
 # 태그 하나로 이미지와 차트를 함께 게시합니다.
 #
-#   git tag v0.1.2 && git push origin v0.1.2
+#   git tag v0.1.0 && git push origin v0.1.0
 #
 # 그러면 이 워크플로가 순서대로 합니다.
 #   1. app/ 을 이미지로 빌드해 Gitea 컨테이너 레지스트리에 올림
@@ -30,7 +30,7 @@
 #
 # 태그를 재사용하지 마세요. kubelet은 이미 받아 둔 이미지를 다시 받지 않고
 # (imagePullPolicy: IfNotPresent), Helm 레지스트리도 같은 차트 버전을 덮어쓰지
-# 않습니다. 고칠 때마다 v0.1.3, v0.1.4 로 올리세요.
+# 않습니다. 고칠 때마다 v0.1.1, v0.1.2 로 올리세요.
 
 name: release
 
