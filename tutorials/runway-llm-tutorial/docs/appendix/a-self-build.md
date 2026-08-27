@@ -21,14 +21,7 @@
 저장소에 `.github/workflows/release.yaml` 이 들어 있습니다. 태그를 밀면 두 가지가
 자동으로 게시됩니다.
 
-```
-git tag v0.1.0 && git push origin v0.1.0
-        │
-        ├──▶ 컨테이너 이미지 → ghcr.io/<계정>/runway-llm-tutorial:0.1.0
-        │
-        └──▶ Helm 차트      → https://<계정>.github.io/runway-llm-tutorial
-                               (gh-pages 브랜치에 index.yaml + .tgz)
-```
+![태그를 밀면 컨테이너 이미지는 ghcr.io로, Helm 차트는 github.io로 게시됩니다](../assets/tag-publishes.svg)
 
 3-1에서 등록한 리포지토리 URL이 아래쪽 주소입니다. 차트 안에는 위쪽 이미지 주소가
 이미 박혀 있어서, 따라하는 사람은 아무것도 빌드하지 않습니다.
